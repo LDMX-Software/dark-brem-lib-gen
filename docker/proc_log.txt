@@ -1,0 +1,150 @@
+>>fixedAP2<< 
+Model fixedAP2 found  in ../Models 
+Started Thu Nov  5 12:32:37 PST 2015
+ Got it 2particles_0001_v1.dat                                                 
+ Added loop options for p 65
+ Looping over  11 particles
+u u~ c c~ d d~ s s~ g f+ f-   
+ Added loop options for j 66
+ Looping over  11 particles
+u u~ c c~ d d~ s s~ g f+ f-   
+ Added loop options for l+ 67
+ Looping over  2 particles
+e+ mu+   
+ Added loop options for l- 68
+ Looping over  2 particles
+e- mu-   
+ Added loop options for vl 69
+ Looping over  2 particles
+ve vm   
+ Added loop options for vl~ 70
+ Looping over  2 particles
+ve~ vm~   
+ Particles read from file.
+ Reading interactions from file
+ Adding new coupling QCD  1
+ Adding new coupling QED  2
+ Adding new coupling QWD  3
+ Adding new coupling QFD  4
+ Adding new coupling QND  5
+ Adding new coupling QDS  6
+  
+  
+ Standard Model particles include:
+     Quarks:   d u s c b t d~ u~ s~ c~ b~ t~
+     Leptons:  e- mu- ta- e+ mu+ ta+ ve vm vt ve~ vm~ vt~
+     Bosons:   g a z w+ w- h
+  
+ Enter process you would like calculated in the form  e+ e- -> a.
+ ("done" to exit MadGraph.)
+ Part Info after sort:  1 26 0 T
+ Part Info after sort:  2 62 0 T
+ Part Info after sort:  3 60 0 T
+ Final part info:  1 26 0 T T
+ Final part info:  2 62 0 T T
+ Final part info:  3 60 0 T T
+ Attempting Process: e- n+ -> e- n+ x  
+ Setting particle  1 26 to id  26
+ Setting particle  2 62 to id  62
+ Setting particle  3 60 to id  60
+Enter maximum number of vertices for eg QCD = 4 (type "end_coup" to finish)
+ Setting QCD  =  0
+Enter maximum number of vertices for eg QCD = 4 (type "end_coup" to finish)
+ Setting QED  =  1
+Enter maximum number of vertices for eg QCD = 4 (type "end_coup" to finish)
+ Setting QFD  =  0
+Enter maximum number of vertices for eg QCD = 4 (type "end_coup" to finish)
+ Setting QND  =  1
+Enter maximum number of vertices for eg QCD = 4 (type "end_coup" to finish)
+ Setting QWD  =  9
+Enter maximum number of vertices for eg QCD = 4 (type "end_coup" to finish)
+ Setting QDS  =  2
+Enter maximum number of vertices for eg QCD = 4 (type "end_coup" to finish)
+Enter a name to identify process (matrix): 
+ Part Info after sort:  1 1 26
+ Part Info after sort:  2 3 60
+ Part Info after sort:  3 2 62
+ New Process 1
+   26   60   62
+  
+Progress    0% finished topology 1 1
+ finished topology 2 1
+ There are  2 graphs.
+  
+ Part Info after sort:  1 1 26
+ Part Info after sort:  2 3 60
+ Part Info after sort:  3 2 62
+ Writing Feynman graphs in file matrix.ps
+ Reduced color matrix 1 2
+ Writing function MATRIX in file matrix.f.
+ isym before:  1
+ Part Info after sort:  1 1 26
+ Part Info after sort:  2 3 60
+ Part Info after sort:  3 2 62
+ isym after:  1
+ buff = 
+ e- n+ -> e-n+x                                                                                                          
+Wrote process: 
+e- n+ -> e-n+x  @ 0_
+
+
+ Standard Model particles include:
+     Quarks:   d u s c b t d~ u~ s~ c~ b~ t~
+     Leptons:  e- mu- ta- e+ mu+ ta+ ve vm vt ve~ vm~ vt~
+     Bosons:   g a z w+ w- h
+  
+ Enter process you would like calculated in the form  e+ e- -> a.
+ ("done" to exit MadGraph.)
+ Part Info after sort:  1 1 26
+ Part Info after sort:  2 3 60
+ Part Info after sort:  3 2 62
+ Found match 2 1
+   26   60   62
+    0    0    0
+
+
+ Thank you for using MadGraph
+
+ Got it 2particles_0001_v1.dat                                                 
+ Added loop options for p 65
+ Looping over  11 particles
+u u~ c c~ d d~ s s~ g f+ f-   
+ Added loop options for j 66
+ Looping over  11 particles
+u u~ c c~ d d~ s s~ g f+ f-   
+ Added loop options for l+ 67
+ Looping over  2 particles
+e+ mu+   
+ Added loop options for l- 68
+ Looping over  2 particles
+e- mu-   
+ Added loop options for vl 69
+ Looping over  2 particles
+ve vm   
+ Added loop options for vl~ 70
+ Looping over  2 particles
+ve~ vm~   
+ Particles read from file.
+ Reading interactions from file
+ Adding new coupling QCD  1
+ Adding new coupling QED  2
+ Adding new coupling QWD  3
+ Adding new coupling QFD  4
+ Adding new coupling QND  5
+ Adding new coupling QDS  6
+  
+  
+ Standard Model particles include:
+     Quarks:   d u s c b t d~ u~ s~ c~ b~ t~
+     Leptons:  e- mu- ta- e+ mu+ ta+ ve vm vt ve~ vm~ vt~
+     Bosons:   g a z w+ w- h
+  
+ Enter process you would like calculated in the form  e+ e- -> a.
+ ("done" to exit MadGraph.)
+ New Process 1
+
+
+
+ Thank you for using MadGraph
+
+Finished Thu Nov  5 12:32:42 PST 2015 

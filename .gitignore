@@ -1,0 +1,4 @@
+
+# ignore any generated data files
+lhe/**
+log/**
