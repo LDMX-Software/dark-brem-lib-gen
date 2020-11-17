@@ -37,3 +37,15 @@ else
   return 127
 fi
 
+generate-db-lib() {
+  # Let's generate a dark brem library for the input run number
+  _run="$1"
+
+  for ap_mass in "1" "0.1" "0.05" "0.01" "0.005" "0.001"
+  do
+    for electron_energy in "4.0" "3.8" "3.5" "3.25" "3.0" "2.8" "2.5" "2.0"
+    do
+      mg-gen -A $ap_mass -E $electron_energy -r $_run -N 20000
+    done
+  done
+}
