@@ -2,7 +2,12 @@
 # Dark Brem Event Generation using MadGraph and Docker
 
 ### docker
-This directory contains the actual build context for a docker image that can run the necessary MadGraph event generation script.
+
+<a href="https://github.com/tomeichlersmith/mg-dark-brem/actions" alt="Actions">
+    <img src="https://github.com/tomeichlersmith/mg-dark-brem/workflows/Build/badge.svg" />
+</a>
+
+This directory contains the actual build context for a docker image that can run the necessary [MadGraph](https://cp3.irmp.ucl.ac.be/projects/madgraph/) event generation script.
 Currently, the MadGraph event generation can handle the following variables.
 
 - Number of Events to Generate

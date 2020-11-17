@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'docker/**'
+      - '.github/workflows/build.yml'
     branches:
       - '**'
     tags:
