@@ -66,7 +66,7 @@ do
       shift
       ;;
     -o|--out)
-      if [[ -z "$2" || "$2" =~ "-".* ]]
+      if [[ -z "$2" ]]
       then
         mg-gen-requires-arg $option
         exit 1

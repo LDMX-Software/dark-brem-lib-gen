@@ -36,3 +36,4 @@ else
   echo "ERROR: Neither docker nor singularity are installed."
   return 127
 fi
+
