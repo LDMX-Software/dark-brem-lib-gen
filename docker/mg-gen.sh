@@ -29,17 +29,14 @@ mg-gen-help() {
 mg-gen-fatal-error() {
   echo "ERROR: $@"
   mg-gen-help
-  return 1
 }
 
 mg-gen-requires-arg() {
   mg-gen-fatal-error "The '$1' flag requires an argument after it!"
-  return 1
 }
 
 mg-gen-requires-num-arg() {
   mg-gen-fatal-error "The '$1' flag requires a numerical argument."
-  return 1
 }
 
 ###############################################################################
@@ -72,7 +69,7 @@ do
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         mg-gen-requires-arg $option
-        return 1
+        exit 1
       fi
       _out_dir="$2"
       shift
@@ -82,6 +79,7 @@ do
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         mg-gen-requires-arg $option
+        exit 2
       elif [[ $2 =~ ^[.0-9]+$ ]]
       then
         _apmass="$2"
@@ -89,12 +87,14 @@ do
         shift
       else
         mg-gen-requires-num-arg $option
+        exit 3
       fi
       ;;
     -E|--energy)
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         mg-gen-requires-arg $option
+        exit 4
       elif [[ $2 =~ ^[.0-9]+$ ]]
       then
         _energy=$2
@@ -102,12 +102,14 @@ do
         shift
       else
         mg-gen-requires-num-arg $option
+        exit 5
       fi
       ;;
     -r|--run)
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         mg-gen-requires-arg $option
+        exit 6
       elif [[ $2 =~ ^[0-9]+$ ]]
       then
         _run=$2
@@ -115,12 +117,14 @@ do
         shift
       else
         mg-gen-requires-num-arg $option
+        exit 7
       fi
       ;;
     -N|--nevents)
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         mg-gen-requires-arg $option
+        exit 8
       elif [[ $2 =~ ^[0-9]+$ ]]
       then
         _nevents=$2
@@ -128,6 +132,7 @@ do
         shift
       else
         mg-gen-requires-num-arg $option
+        exit 9
       fi
       ;;
     *)
