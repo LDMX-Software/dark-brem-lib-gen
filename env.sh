@@ -1,3 +1,10 @@
+#!/bin/bash
+
+###############################################################################
+# env.sh
+#   Setup the MadGraph/Docker environment for generating dark brem vertex
+#   libraries.
+###############################################################################
 
 _repo="tomeichlersmith/mg-dark-brem"
 _tag="edge"
@@ -25,9 +32,7 @@ then
   export MG_SINGULARITY_IMG=$(pwd)/${_repo/\//_}_${_tag}.sif
 
   # make sure we have the image we want
-  singularity build \
-    ${MG_SINGULARITY_IMG} \
-    docker://${MG_DOCKER_TAG} 
+  singularity build ${MG_SINGULARITY_IMG} docker://${MG_DOCKER_TAG} 
 
   # define run command
   alias mg-gen='singularity run --no-home --bind $(pwd) ${MG_SINGULARITY_IMG} --out $(pwd)'
@@ -37,7 +42,11 @@ else
   return 127
 fi
 
-generate-db-lib() {
+###############################################################################
+# generate-db-lib run_number
+#   Generate a full dark brem vertex library using the input run number.
+###############################################################################
+function generate-db-lib() {
   # Let's generate a dark brem library for the input run number
   _run="$1"
 
