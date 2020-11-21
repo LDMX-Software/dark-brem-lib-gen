@@ -11,4 +11,4 @@ RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
     chmod +x makefile mg-gen.sh bin/*
 
-ENTRYPOINT [ "./mg-gen.sh" ]
+ENTRYPOINT [ "/madgraph/mg-gen.sh" ]
