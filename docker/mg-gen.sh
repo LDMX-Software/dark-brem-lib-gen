@@ -184,9 +184,10 @@ touch $_log
 ###############################################################################
 # Define helpful variables
 #_random=`date +%N|sed s/...$//`
-_lhe_dir=$_out_dir/lhe/$_run/mA.$_apmass #location of event output
-_log_dir=$_out_dir/log/$_run/mA.$_apmass #location of log output
-_prefix=LDMX_W_UndecayedAP."$_energy"GeV.W.mA.$_apmass.$_run #prefix for files
+_library_name=LDMX_W_UndecayedAP_mA_${_apmass}_run_$_run
+_lhe_dir=$_out_dir/$_library_name
+_log_dir=$_out_dir/log/$_library_name #location of log output
+_prefix=${_library_name}_IncidentE_${_energy}
 
 if [[ $_verbose == *"ON"* ]]
 then

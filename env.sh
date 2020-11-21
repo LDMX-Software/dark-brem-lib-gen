@@ -15,7 +15,7 @@ then
   # this system has docker installed
 
   # make sure we have image we want
-  docker pull ${MG_DOCKER_TAG}
+  #docker pull ${MG_DOCKER_TAG}
 
   # define run command
   alias mg-gen='docker run --rm -it -v $(pwd):$(pwd) -u $(id -u $USER):$(id -g $USER) ${MG_DOCKER_TAG} --out $(pwd)'
@@ -44,17 +44,22 @@ fi
 
 ###############################################################################
 # generate-db-lib run_number
-#   Generate a full dark brem vertex library using the input run number.
+#   Generate a full dark brem vertex library using the input A' mass and run number.
+#
+#   Output: Archive named 'LDMX_W_UndecayedAP_mA_<mass>_run_<run>.tar.gz'
+#           that contains a library of DB events for the input mass
+#           and run number inside of a directory.
 ###############################################################################
 function generate-db-lib() {
-  # Let's generate a dark brem library for the input run number
-  _run="$1"
+  _mass="$1"
+  _run="$2"
+  _extra_mg_gen_options="${@:3}"
 
-  for ap_mass in "1" "0.1" "0.05" "0.01" "0.005" "0.001"
+  for electron_energy in "4.0" "3.8" #"3.5" "3.25" "3.0" "2.8" "2.5" "2.0"
   do
-    for electron_energy in "4.0" "3.8" "3.5" "3.25" "3.0" "2.8" "2.5" "2.0"
-    do
-      mg-gen -A $ap_mass -E $electron_energy -r $_run -N 20000
-    done
+    mg-gen -A $_mass -E $electron_energy -r $_run -N 20000 $_extra_mg_gen_options
   done
+
+  _library_name=LDMX_W_UndecayedAP_mA_${_mass}_run_${_run}
+  tar czf ${_library_name}.tar.gz ${_library_name}/
 }
