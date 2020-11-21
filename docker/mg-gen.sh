@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export LANG=C #silences warning form perl
 export _default_mg_gen_out_dir=$(pwd)
 export _default_mg_gen_apmass="0.01"
 export _default_mg_gen_energy="4.0"
@@ -13,7 +14,6 @@ mg-gen-help() {
   echo "                [-A,--apmass apmass] [-E,--energy energy] [-r,--run run] [-N,--nevents N]"
   echo "    -h,--help    : Print this help message."
   echo "    -v,--verbose : Print messages from this script and MG to the terminal screen."
-  echo "    -l,--log     : Print messages from this script and MG to a log file."
   echo "    -o,--out     : out_dir is the output directory for logging and lhe."
   echo "                   Default: $_default_mg_gen_out_dir"
   echo "    -A,--apmass  : apmass is the mass of the A' in GeV."
@@ -47,7 +47,6 @@ _energy=$_default_mg_gen_energy
 _run=$_default_mg_gen_run
 _nevents=$_default_mg_gen_nevents
 _verbose="OFF"
-_should_log="OFF"
 
 while [[ $# -gt 0 ]]
 do
@@ -59,10 +58,6 @@ do
       ;;
     -v|--verbose)
       _verbose="ON"
-      shift
-      ;;
-    -l|--log)
-      _should_log="ON"
       shift
       ;;
     -o|--out)
@@ -194,9 +189,7 @@ _prefix=${_library_name}_IncidentE_${_energy}
 
 if [[ $_verbose == *"ON"* ]]
 then
-  echo "[ mg-gen.sh ] : Starting job with $_apmass GeV A', $_energy GeV beam, run number $_run, and $_nevents events." | tee $_log
-else
-  echo "[ mg-gen.sh ] : Starting job with $_apmass GeV A', $_energy GeV beam, run number $_run, and $_nevents events." &>> $_log
+  echo "[ mg-gen.sh ] : Starting job with $_apmass GeV A', $_energy GeV beam, run number $_run, and $_nevents events."
 fi
 
 ###############################################################################
@@ -208,6 +201,7 @@ mkdir -p $_Events
 mv Events/* $_Events
 rm -r Events/
 ln -s $_Events Events
+chmod +rw Events
 
 ###############################################################################
 # Actually run MadGraph and generate events
@@ -215,9 +209,9 @@ ln -s $_Events Events
 #   Second Arg : Prefix to attach to output events package
 if [[ $_verbose == *"ON"* ]]
 then
-  ./bin/generate_events 0 $_prefix | tee $_log 
+  ./bin/generate_events 0 $_prefix 
 else
-  ./bin/generate_events 0 $_prefix &>> $_log 
+  ./bin/generate_events 0 $_prefix &> /dev/null
 fi
 
 ###############################################################################
@@ -226,11 +220,4 @@ mkdir -p $_lhe_dir
 mv Events/${_prefix}_unweighted_events.lhe.gz $_lhe_dir
 cd $_lhe_dir
 gunzip -f ${_prefix}_unweighted_events.lhe.gz #unpack into an LHE file
-
-#copy over generated logs
-if [[ $_should_log == *"ON"* ]]
-then
-  mkdir -p $_log_dir
-  mv $_log $_log_dir
-fi
 
