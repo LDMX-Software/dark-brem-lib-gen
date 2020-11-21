@@ -55,11 +55,12 @@ function generate-db-lib() {
   _run="$2"
   _extra_mg_gen_options="${@:3}"
 
-  for electron_energy in "4.0" "3.8" #"3.5" "3.25" "3.0" "2.8" "2.5" "2.0"
+  for electron_energy in "4.0" "3.8" "3.5" "3.25" "3.0" "2.8" "2.5" "2.0"
   do
     mg-gen -A $_mass -E $electron_energy -r $_run -N 20000 $_extra_mg_gen_options
   done
 
   _library_name=LDMX_W_UndecayedAP_mA_${_mass}_run_${_run}
   tar czf ${_library_name}.tar.gz ${_library_name}/
+  rm -r ${_library_name}/
 }

@@ -22,4 +22,4 @@ This is a bash script that sets up a helpful working environment for using the c
 It defines the following functions for systems with either docker or singularity installed.
 
 - `mg-gen` : Alias for the complicated container-running command. Use `mg-gen --help` to see the full option detail.
-- `generate-db-lib {run_num}` : Generate a full dark brem vertex library for the input run number. This vertex library iterates over the six main mass points and eight incident electron energies between two and four GeV, generating 20k events for each pair.
+- `generate-db-lib {ap_mass} {run_num}` : Generate a full dark brem vertex library for the input run number. This vertex library iterates over eight incident electron energies between two and four GeV, generating 20k events for each electron energy.
