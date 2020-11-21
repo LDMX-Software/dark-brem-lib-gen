@@ -2,3 +2,6 @@
 # ignore any generated data files
 lhe/**
 log/**
+libs/**
+.singularity/**
+*.sif
