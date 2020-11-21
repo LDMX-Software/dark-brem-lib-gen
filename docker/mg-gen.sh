@@ -200,6 +200,16 @@ else
 fi
 
 ###############################################################################
+# Setup Events directory
+#   Point us towards a /tmp/ directory so we have space to work
+#   The writable-tmpfs option on singularity does not allow for enough space
+_Events=/tmp/$USER/mg-dark-brem/$_library_name
+mkdir -p $_Events
+mv Events/* $_Events
+rm -r Events/
+ln -s $_Events Events
+
+###############################################################################
 # Actually run MadGraph and generate events
 #   First Arg  : 0 for generating events serially (1 for in parallel)
 #   Second Arg : Prefix to attach to output events package

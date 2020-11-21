@@ -35,7 +35,7 @@ then
   singularity build ${MG_SINGULARITY_IMG} docker://${MG_DOCKER_TAG} 
 
   # define run command
-  alias mg-gen='singularity run --no-home --bind $(pwd) ${MG_SINGULARITY_IMG} --out $(pwd)'
+  alias mg-gen='singularity run --writable-tmpfs --bind $(pwd) ${MG_SINGULARITY_IMG} --out $(pwd)'
 
 else
   echo "ERROR: Neither docker nor singularity are installed."
