@@ -142,6 +142,9 @@ do
   esac
 done
 
+# Make sure we are in the madgraph directory for compatibility with singularity
+cd /madgraph/
+
 ###############################################################################
 # Several Substitutes need to be made to the parameter and running cards
 #   These are done here using sed and temp variable _line_
