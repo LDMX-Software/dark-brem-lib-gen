@@ -6,6 +6,7 @@ RUN apt-get update &&\
       gfortran 
       
 COPY . /madgraph
+RUN chmod 777 /madgraph/
 WORKDIR /madgraph/
 RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
