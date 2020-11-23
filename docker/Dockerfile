@@ -10,6 +10,6 @@ RUN chmod 777 /madgraph/
 WORKDIR /madgraph/
 RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
-    chmod +x makefile mg-gen.sh bin/*
+    chmod +x makefile db-lib-gen.sh bin/*
 
-ENTRYPOINT [ "/madgraph/mg-gen.sh" ]
+ENTRYPOINT [ "/madgraph/db-lib-gen.sh" ]

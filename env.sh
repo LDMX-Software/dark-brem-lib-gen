@@ -6,7 +6,7 @@
 #   libraries.
 ###############################################################################
 
-_repo="tomeichlersmith/mg-dark-brem"
+_repo="tomeichlersmith/dark-brem-lib-gen"
 _tag="edge"
 export MG_DOCKER_TAG="$_repo:$_tag"
 
