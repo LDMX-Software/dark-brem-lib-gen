@@ -8,7 +8,7 @@ export _default_mg_gen_run="3000"
 export _default_mg_gen_nevents="20000"
 
 mg-gen-help() {
-  echo "MadGraph Dark Brem Event Generation."
+  echo "MadGraph Dark Brem Event Library Generation."
   echo "This scripts assumes that it is being run inside of the tomeichlersmith/madgraph container."
   echo "  Usage: mg-gen [-h,--help] [-v,--verbose] [-l,--log] [-o,--out out_dir] "
   echo "                [-A,--apmass apmass] [-E,--energy energy0 [energy1 energy2 ...]] [-r,--run run] [-N,--nevents N]"
