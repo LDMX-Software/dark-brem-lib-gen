@@ -15,11 +15,10 @@ Currently, the MadGraph event generation can handle the following variables.
 - Incident Electron Beam Energy in GeV
 - Run Number (used as random number seed) 
 
-The corresponding DockerHub repository for this image is [tomeichlersmith/mg-dark-brem](https://hub.docker.com/repository/docker/tomeichlersmith/mg-dark-brem).
+The corresponding DockerHub repository for this image is [tomeichlersmith/dark-brem-lib-gen](https://hub.docker.com/repository/docker/tomeichlersmith/dark-brem-lib-gen).
 
 ### env.sh
 This is a bash script that sets up a helpful working environment for using the container built using the above context.
 It defines the following functions for systems with either docker or singularity installed.
 
-- `mg-gen` : Alias for the complicated container-running command. Use `mg-gen --help` to see the full option detail.
-- `generate-db-lib {ap_mass} {run_num}` : Generate a full dark brem vertex library for the input run number. This vertex library iterates over eight incident electron energies between two and four GeV, generating 20k events for each electron energy.
+- `db-lib-gen` : Alias for the complicated container-running command. Use `db-lib-gen --help` to see the full option detail.
