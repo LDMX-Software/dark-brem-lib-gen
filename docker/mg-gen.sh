@@ -3,7 +3,7 @@
 export LANG=C #silences warning form perl
 export _default_mg_gen_out_dir=$(pwd)
 export _default_mg_gen_apmass="0.01"
-export _default_mg_gen_energy="4.0"
+export _default_mg_gen_energies="4.0"
 export _default_mg_gen_run="3000"
 export _default_mg_gen_nevents="20000"
 
@@ -11,15 +11,15 @@ mg-gen-help() {
   echo "MadGraph Dark Brem Event Generation."
   echo "This scripts assumes that it is being run inside of the tomeichlersmith/madgraph container."
   echo "  Usage: mg-gen [-h,--help] [-v,--verbose] [-l,--log] [-o,--out out_dir] "
-  echo "                [-A,--apmass apmass] [-E,--energy energy] [-r,--run run] [-N,--nevents N]"
+  echo "                [-A,--apmass apmass] [-E,--energy energy0 [energy1 energy2 ...]] [-r,--run run] [-N,--nevents N]"
   echo "    -h,--help    : Print this help message."
   echo "    -v,--verbose : Print messages from this script and MG to the terminal screen."
   echo "    -o,--out     : out_dir is the output directory for logging and lhe."
   echo "                   Default: $_default_mg_gen_out_dir"
   echo "    -A,--apmass  : apmass is the mass of the A' in GeV."
   echo "                   Default: $_default_mg_gen_apmass"
-  echo "    -E,--energy  : energy is the energy of the incident electron beam in GeV."
-  echo "                   Default: $_default_mg_gen_energy"
+  echo "    -E,--energy  : energy{0..} is the energy of the incident electron beam in GeV."
+  echo "                   Default: $_default_mg_gen_energies"
   echo "    -r,--run     : run is the run number which acts as the random numbe seed."
   echo "                   Default: $_default_mg_gen_run"
   echo "    -N,--nevents : N is the number of events to attempt to generate."
@@ -41,6 +41,7 @@ mg-gen-requires-num-arg() {
 
 mg-gen-log() {
   [[ "$_verbose" == *"ON"* ]] && { echo "[ mg-gen ] : $@"; }
+  [[ -z $_log ]] || { echo "$@" >> $_log; }
 }
 
 mg-gen-in-singularity() {
@@ -52,7 +53,7 @@ mg-gen-in-singularity() {
 # Save inputs to helpfully named variables
 _out_dir=$_default_mg_gen_out_dir
 _apmass=$_default_mg_gen_apmass
-_energy=$_default_mg_gen_energy
+_energies=$_default_mg_gen_energies
 _run=$_default_mg_gen_run
 _nevents=$_default_mg_gen_nevents
 _verbose="OFF"
@@ -99,14 +100,14 @@ do
       then
         mg-gen-requires-arg $option
         exit 4
-      elif [[ $2 =~ ^[.0-9]+$ ]]
-      then
-        _energy=$2
-        shift
-        shift
       else
-        mg-gen-requires-num-arg $option
-        exit 5
+        shift #get past option flag
+        _energies=""
+        while [[ "$1" =~ ^[.0-9]+$ ]]
+        do
+          _energies="${_energies}$1 "
+          shift
+        done
       fi
       ;;
     -r|--run)
@@ -146,12 +147,15 @@ do
   esac
 done
 
+[[ -z "$_energies" ]] && mg-gen-requires-arg "-E, --energy"
+
 ###############################################################################
 # Define helpful variables
 _library_name=LDMX_W_UndecayedAP_mA_${_apmass}_run_$_run
-_lhe_dir=$_out_dir/$_library_name
-_log_dir=$_out_dir/log/$_library_name #location of log output
-_prefix=${_library_name}_IncidentE_${_energy}
+_library_dir=$PWD/$_library_name
+_log=$_library_dir/GenerationLog_$_library_name.log
+mkdir -p $_library_dir
+touch $_log
 
 if mg-gen-in-singularity
 then
@@ -184,10 +188,6 @@ sed -in "s/.*iseed.*/$_line_/" Cards/run_card.dat
 #_line_=" 2.0 = efmax ! maximum E for all f's"
 #sed -in "s/.*efmax.*/$_line_/" Cards/run_card.dat
 
-# energy of incoming beam in GeV
-_line_=$_energy" = ebeam1  ! beam 1 energy in GeV"
-sed -in "s/.*ebeam1.*/$_line_/" Cards/run_card.dat
-
 # energy of stationary target in GeV
 _line_="171.3 = ebeam2 ! beam 2 energy in GeV"
 sed -in "s/.*ebeam2.*/$_line_/" Cards/run_card.dat
@@ -200,30 +200,44 @@ sed -in "s/.*mbeam2.*/$_line_/" Cards/run_card.dat
 _line_="623 171.3 #HPMASS"
 sed -in "s/623.*# HPMASS (tungsten)/$_line_/" Cards/param_card.dat
 
-_log=$PWD/$_prefix.log
-touch $_log
+for energy in $_energies
+do
+  # define this item in the library with its own name
+  _prefix=${_library_name}_IncidentE_${energy}
+
+  # energy of incoming beam in GeV
+  _line_=$energy" = ebeam1  ! beam 1 energy in GeV"
+  sed -in "s/.*ebeam1.*/$_line_/" Cards/run_card.dat
+  
+  ###############################################################################
+  # Actually run MadGraph and generate events
+  #   First Arg  : 0 for generating events serially (1 for in parallel)
+  #   Second Arg : Prefix to attach to output events package
+  mg-gen-log "Starting job with $_apmass GeV A', $energy GeV beam, run number $_run, and $_nevents events."
+  if [[ $_verbose == *"ON"* ]]
+  then
+    ./bin/generate_events 0 $_prefix | tee -a $_log
+  else
+    ./bin/generate_events 0 $_prefix &> $_log
+  fi
+  
+  ###############################################################################
+  # Copy over generated events to library directory
+  mg-gen-log "Copying generated events to '$_library_dir'."
+  mkdir -p $_library_dir 
+  mv Events/${_prefix}_unweighted_events.lhe.gz $_library_dir
+  cd $_library_dir
+  gunzip -f ${_prefix}_unweighted_events.lhe.gz #unpack into an LHE file
+  cd - &> /dev/null
+done
 
 ###############################################################################
-# Actually run MadGraph and generate events
-#   First Arg  : 0 for generating events serially (1 for in parallel)
-#   Second Arg : Prefix to attach to output events package
-mg-gen-log "Starting job with $_apmass GeV A', $_energy GeV beam, run number $_run, and $_nevents events."
-if [[ $_verbose == *"ON"* ]]
-then
-  ./bin/generate_events 0 $_prefix 
-else
-  ./bin/generate_events 0 $_prefix &> /dev/null
-fi
-
-###############################################################################
-# Copy over generated events to output directory
-mg-gen-log "Copying generated events to '$_lhe_dir'."
-mkdir -p $_lhe_dir 
-mv Events/${_prefix}_unweighted_events.lhe.gz $_lhe_dir
-cd $_lhe_dir
-gunzip -f ${_prefix}_unweighted_events.lhe.gz #unpack into an LHE file
+# Compress LHE files and log into a library
+mg-gen-log "Compressing and copying '${_library_name}'."
+tar czf ${_library_name}.tar.gz ${_library_name}
+cp ${_library_name}.tar.gz ${_out_dir}
 
 ###############################################################################
 # Clean-Up, only need to worry about this if running with singularity
-mg-gen-in-singularity && { mg-gen-log "Cleaning up '$_new_working_dir'."; rm -r $_new_working_dir }
+mg-gen-in-singularity && { mg-gen-log "Cleaning up '$_new_working_dir'."; rm -r $_new_working_dir; }
 
