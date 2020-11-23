@@ -152,22 +152,23 @@ done
 ###############################################################################
 # Define helpful variables
 _library_name=LDMX_W_UndecayedAP_mA_${_apmass}_run_$_run
-_library_dir=$PWD/$_library_name
-_log=$_library_dir/GenerationLog_$_library_name.log
-mkdir -p $_library_dir
-touch $_log
 
 if db-lib-gen-in-singularity
 then
   # we are in singularity and need to move completely to /tmp/ so we have enough space
   # assumes a sizeable /scratch/ directory has been mounted to the container at /working_dir/
-  _new_working_dir=/working_dir/$_prefix
+  _new_working_dir=/working_dir/$_library_name
   db-lib-gen-log "Moving working directory to '$_new_working_dir'."
   mkdir -p $_new_working_dir
   cp -r /madgraph/ $_new_working_dir
   cd $_new_working_dir/madgraph
 fi
   
+_library_dir=$PWD/$_library_name
+_log=$_library_dir/GenerationLog_$_library_name.log
+mkdir -p $_library_dir
+touch $_log
+
 ###############################################################################
 # Several Substitutes need to be made to the parameter and running cards
 #   These are done here using sed and temp variable _line_
@@ -242,6 +243,6 @@ cp ${_library_name}.tar.gz ${_out_dir}
 if db-lib-gen-in-singularity
 then
   db-lib-gen-log "Cleaning up '$_new_working_dir'."
-  rm -r $_new_working_dir;
+  rm -rf $_new_working_dir/*;
 fi
 
