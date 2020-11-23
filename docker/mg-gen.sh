@@ -153,7 +153,7 @@ _lhe_dir=$_out_dir/$_library_name
 _log_dir=$_out_dir/log/$_library_name #location of log output
 _prefix=${_library_name}_IncidentE_${_energy}
 
-if mg-gen-in-singularity()
+if mg-gen-in-singularity
 then
   # we are in singularity and need to move completely to /tmp/ so we have enough space
   # assumes a sizeable /scratch/ directory has been mounted to the container at /working_dir/
@@ -225,5 +225,5 @@ gunzip -f ${_prefix}_unweighted_events.lhe.gz #unpack into an LHE file
 
 ###############################################################################
 # Clean-Up, only need to worry about this if running with singularity
-mg-gen-in-singularity() && { mg-gen-log "Cleaning up '$_new_working_dir'."; rm -r $_new_working_dir }
+mg-gen-in-singularity && { mg-gen-log "Cleaning up '$_new_working_dir'."; rm -r $_new_working_dir }
 
