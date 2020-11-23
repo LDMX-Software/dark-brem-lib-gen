@@ -35,7 +35,8 @@ then
   singularity build ${MG_SINGULARITY_IMG} docker://${MG_DOCKER_TAG} 
 
   # define run command
-  alias mg-gen='singularity run --no-home --writable-tmpfs --bind $(pwd) ${MG_SINGULARITY_IMG} --out $(pwd)'
+  #     we need to create and mount and large scratch directory for singularity to use for working
+  alias mg-gen='mkdir -p /scratch/$USER && singularity run --no-home --bind $(pwd),/scratch/$USER:/working_dir ${MG_SINGULARITY_IMG} --out $(pwd)'
 
 else
   echo "ERROR: Neither docker nor singularity are installed."
