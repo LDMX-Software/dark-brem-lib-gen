@@ -239,5 +239,9 @@ cp ${_library_name}.tar.gz ${_out_dir}
 
 ###############################################################################
 # Clean-Up, only need to worry about this if running with singularity
-mg-gen-in-singularity && { mg-gen-log "Cleaning up '$_new_working_dir'."; rm -r $_new_working_dir; }
+if mg-gen-in-singularity
+then
+  mg-gen-log "Cleaning up '$_new_working_dir'."
+  rm -r $_new_working_dir;
+fi
 
