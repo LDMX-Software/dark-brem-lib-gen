@@ -39,6 +39,15 @@ mg-gen-requires-num-arg() {
   mg-gen-fatal-error "The '$1' flag requires a numerical argument."
 }
 
+mg-gen-log() {
+  [[ "$_verbose" == *"ON"* ]] && { echo "[ mg-gen ] : $@"; }
+}
+
+mg-gen-in-singularity() {
+  [[ -f "/singularity" ]] && return 0;
+  return 1;
+}
+
 ###############################################################################
 # Save inputs to helpfully named variables
 _out_dir=$_default_mg_gen_out_dir
@@ -137,9 +146,24 @@ do
   esac
 done
 
-# Make sure we are in the madgraph directory for compatibility with singularity
-cd /madgraph/
+###############################################################################
+# Define helpful variables
+_library_name=LDMX_W_UndecayedAP_mA_${_apmass}_run_$_run
+_lhe_dir=$_out_dir/$_library_name
+_log_dir=$_out_dir/log/$_library_name #location of log output
+_prefix=${_library_name}_IncidentE_${_energy}
 
+if mg-gen-in-singularity()
+then
+  # we are in singularity and need to move completely to /tmp/ so we have enough space
+  # assumes a sizeable /scratch/ directory has been mounted to the container at /working_dir/
+  _new_working_dir=/working_dir/$_prefix
+  mg-gen-log "Moving working directory to '$_new_working_dir'."
+  mkdir -p $_new_working_dir
+  cp -r /madgraph/ $_new_working_dir
+  cd $_new_working_dir/madgraph
+fi
+  
 ###############################################################################
 # Several Substitutes need to be made to the parameter and running cards
 #   These are done here using sed and temp variable _line_
@@ -180,22 +204,10 @@ _log=$PWD/$_prefix.log
 touch $_log
 
 ###############################################################################
-# Define helpful variables
-#_random=`date +%N|sed s/...$//`
-_library_name=LDMX_W_UndecayedAP_mA_${_apmass}_run_$_run
-_lhe_dir=$_out_dir/$_library_name
-_log_dir=$_out_dir/log/$_library_name #location of log output
-_prefix=${_library_name}_IncidentE_${_energy}
-
-if [[ $_verbose == *"ON"* ]]
-then
-  echo "[ mg-gen.sh ] : Starting job with $_apmass GeV A', $_energy GeV beam, run number $_run, and $_nevents events."
-fi
-
-###############################################################################
 # Actually run MadGraph and generate events
 #   First Arg  : 0 for generating events serially (1 for in parallel)
 #   Second Arg : Prefix to attach to output events package
+mg-gen-log "Starting job with $_apmass GeV A', $_energy GeV beam, run number $_run, and $_nevents events."
 if [[ $_verbose == *"ON"* ]]
 then
   ./bin/generate_events 0 $_prefix 
@@ -205,8 +217,13 @@ fi
 
 ###############################################################################
 # Copy over generated events to output directory
+mg-gen-log "Copying generated events to '$_lhe_dir'."
 mkdir -p $_lhe_dir 
 mv Events/${_prefix}_unweighted_events.lhe.gz $_lhe_dir
 cd $_lhe_dir
 gunzip -f ${_prefix}_unweighted_events.lhe.gz #unpack into an LHE file
+
+###############################################################################
+# Clean-Up, only need to worry about this if running with singularity
+mg-gen-in-singularity() && { mg-gen-log "Cleaning up '$_new_working_dir'."; rm -r $_new_working_dir }
 
