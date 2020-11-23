@@ -46,7 +46,7 @@ jobs:
       name: Determine Image Tags
       id: generate_tag
       run: |
-          _repo=tomeichlersmith/mg-dark-brem
+          _repo=tomeichlersmith/dark-brem-lib-gen
           _tag=edge
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             # if pushing a git tag ==> get the git tag for the docker tag
