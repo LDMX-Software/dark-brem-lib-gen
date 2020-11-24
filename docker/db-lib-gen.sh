@@ -10,16 +10,17 @@ export _default_db_lib_gen_nevents="20000"
 db-lib-gen-help() {
   echo "MadGraph Dark Brem Event Library Generation."
   echo "This scripts assumes that it is being run inside of the tomeichlersmith/madgraph container."
-  echo "  Usage: db-lib-gen [-h,--help] [-v,--verbose] [-l,--log] [-o,--out out_dir] "
-  echo "                [-A,--apmass apmass] [-E,--energy energy0 [energy1 energy2 ...]] [-r,--run run] [-N,--nevents N]"
+  echo "  Usage: db-lib-gen [-h,--help] [-v,--verbose] [-o,--out out_dir] "
+  echo "                    [-E,--energy energy0 [energy1 energy2 ...]] "
+  echo "                    [-A,--apmass apmass] [-r,--run run] [-N,--nevents N]"
   echo "    -h,--help    : Print this help message."
   echo "    -v,--verbose : Print messages from this script and MG to the terminal screen."
   echo "    -o,--out     : out_dir is the output directory for logging and lhe."
   echo "                   Default: $_default_db_lib_gen_out_dir"
-  echo "    -A,--apmass  : apmass is the mass of the A' in GeV."
-  echo "                   Default: $_default_db_lib_gen_apmass"
   echo "    -E,--energy  : energy{0..} is the energy of the incident electron beam in GeV."
   echo "                   Default: $_default_db_lib_gen_energies"
+  echo "    -A,--apmass  : apmass is the mass of the A' in GeV."
+  echo "                   Default: $_default_db_lib_gen_apmass"
   echo "    -r,--run     : run is the run number which acts as the random numbe seed."
   echo "                   Default: $_default_db_lib_gen_run"
   echo "    -N,--nevents : N is the number of events to attempt to generate."
@@ -27,8 +28,7 @@ db-lib-gen-help() {
 }
 
 db-lib-gen-fatal-error() {
-  echo "ERROR: $@"
-  db-lib-gen-help
+  echo "ERROR [ db-lib-gen ] : $@"
 }
 
 db-lib-gen-requires-arg() {
@@ -40,8 +40,14 @@ db-lib-gen-requires-num-arg() {
 }
 
 db-lib-gen-log() {
-  [[ "$_verbose" == *"ON"* ]] && { echo "[ db-lib-gen ] : $@"; }
-  [[ -z $_log ]] || { echo "$@" >> $_log; }
+  if $_verbose
+  then
+    echo "[ db-lib-gen ] : $@"
+  fi
+  if [[ ! -z "$_log" ]]
+  then
+    echo "$@" >> $_log
+  fi
 }
 
 db-lib-gen-in-singularity() {
@@ -56,7 +62,7 @@ _apmass=$_default_db_lib_gen_apmass
 _energies=$_default_db_lib_gen_energies
 _run=$_default_db_lib_gen_run
 _nevents=$_default_db_lib_gen_nevents
-_verbose="OFF"
+_verbose=false
 
 while [[ $# -gt 0 ]]
 do
@@ -67,14 +73,14 @@ do
       exit 0
       ;;
     -v|--verbose)
-      _verbose="ON"
+      _verbose=true
       shift
       ;;
     -o|--out)
       if [[ -z "$2" ]]
       then
         db-lib-gen-requires-arg $option
-        exit 1
+        exit 100
       fi
       _out_dir="$2"
       shift
@@ -84,7 +90,7 @@ do
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         db-lib-gen-requires-arg $option
-        exit 2
+        exit 101
       elif [[ $2 =~ ^[.0-9]+$ ]]
       then
         _apmass="$2"
@@ -92,14 +98,14 @@ do
         shift
       else
         db-lib-gen-requires-num-arg $option
-        exit 3
+        exit 102
       fi
       ;;
     -E|--energy)
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         db-lib-gen-requires-arg $option
-        exit 4
+        exit 103
       else
         shift #get past option flag
         _energies=""
@@ -114,7 +120,7 @@ do
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         db-lib-gen-requires-arg $option
-        exit 6
+        exit 104
       elif [[ $2 =~ ^[0-9]+$ ]]
       then
         _run=$2
@@ -122,14 +128,14 @@ do
         shift
       else
         db-lib-gen-requires-num-arg $option
-        exit 7
+        exit 105
       fi
       ;;
     -N|--nevents)
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         db-lib-gen-requires-arg $option
-        exit 8
+        exit 106
       elif [[ $2 =~ ^[0-9]+$ ]]
       then
         _nevents=$2
@@ -137,17 +143,21 @@ do
         shift
       else
         db-lib-gen-requires-num-arg $option
-        exit 9
+        exit 107
       fi
       ;;
     *)
       db-lib-gen-fatal-error "'$option' is not a valid option."
-      exit 127
+      exit 108
       ;;
   esac
 done
 
-[[ -z "$_energies" ]] && db-lib-gen-requires-arg "-E, --energy"
+if [[ -z "$_energies" ]]
+then
+  db-lib-gen-requires-arg "-E, --energy"
+  exit 109
+fi
 
 ###############################################################################
 # Define helpful variables
@@ -184,21 +194,28 @@ sed -in "s/.*nevents.*/$_line_/" Cards/run_card.dat
 _line_=$_run" = iseed ! rnd seed (0=assigned automatically=default))"
 sed -in "s/.*iseed.*/$_line_/" Cards/run_card.dat
 
-# Maximum recoil energy
+#TODO Maximum recoil energy
 #_line_=" 2.0 = efmax ! maximum E for all f's"
 #sed -in "s/.*efmax.*/$_line_/" Cards/run_card.dat
 
-# energy of stationary target in GeV
-_line_="171.3 = ebeam2 ! beam 2 energy in GeV"
-sed -in "s/.*ebeam2.*/$_line_/" Cards/run_card.dat
-
-# mass of stationary target in GeV (same as energy because it is stationary)
-_line_="171.3 = mbeam2 ! beam 2 energy in GeV"
-sed -in "s/.*mbeam2.*/$_line_/" Cards/run_card.dat
-
-# definition of stationary target particle and its mass (tungsten)
-_line_="623 171.3 #HPMASS"
-sed -in "s/623.*# HPMASS (tungsten)/$_line_/" Cards/param_card.dat
+if $_verbose
+then
+  gen_events() {
+    if ! ./bin/generate_events 0 "$1" | tee -a $_log
+    then
+      return 1
+    fi
+    return 0
+  }
+else
+  gen_events() {
+    if ! ./bin/generate_events 0 "$1" &>> $_log
+    then
+      return 1
+    fi
+    return 0
+  }
+fi
 
 for energy in $_energies
 do
@@ -214,34 +231,58 @@ do
   #   First Arg  : 0 for generating events serially (1 for in parallel)
   #   Second Arg : Prefix to attach to output events package
   db-lib-gen-log "Starting job with $_apmass GeV A', $energy GeV beam, run number $_run, and $_nevents events."
-  if [[ $_verbose == *"ON"* ]]
+  if ! gen_events $_prefix
   then
-    ./bin/generate_events 0 $_prefix | tee -a $_log
-  else
-    ./bin/generate_events 0 $_prefix &> $_log
+    db-lib-gen-fatal-error "MadGraph event generation exited with non-zero error code."
+    exit 110
   fi
   
   ###############################################################################
   # Copy over generated events to library directory
   db-lib-gen-log "Copying generated events to '$_library_dir'."
-  mkdir -p $_library_dir 
-  mv Events/${_prefix}_unweighted_events.lhe.gz $_library_dir
+  if ! mkdir -p $_library_dir 
+  then 
+    db-lib-gen-fatal-error "Could not create library directory '$_library_dir'."
+    exit 111
+  fi
+  
+  if ! mv Events/${_prefix}_unweighted_events.lhe.gz $_library_dir 
+  then
+    db-lib-gen-fatal-error "Could not move package of events 'Events/${_prefix}_unweighted_events.lhe.gz'."
+    exit 112
+  fi
+
   cd $_library_dir
-  gunzip -f ${_prefix}_unweighted_events.lhe.gz #unpack into an LHE file
+
+  if ! gunzip -f ${_prefix}_unweighted_events.lhe.gz
+  then
+    db-lib-gen-fatal-error "Could not unzip the events package '${_prefix}_unweighted_events.lhe.gz'."
+    exit 113
+  fi
+
   cd - &> /dev/null
 done
 
 ###############################################################################
 # Compress LHE files and log into a library
 db-lib-gen-log "Compressing and copying '${_library_name}'."
-tar czf ${_library_name}.tar.gz ${_library_name}
-cp ${_library_name}.tar.gz ${_out_dir}
+if ! tar czf ${_library_name}.tar.gz ${_library_name}
+then 
+  db-lib-gen-fatal-error "Could not compress the library '$_library_name' into an archive."
+  exit 114
+fi
+
+if ! cp ${_library_name}.tar.gz ${_out_dir} 
+then 
+  db-lib-gen-fatal-error "Could not copy library '${_library_name}.tar.gz' to '${_out_dir}'."
+  exit 115
+fi
 
 ###############################################################################
 # Clean-Up, only need to worry about this if running with singularity
 if db-lib-gen-in-singularity
 then
   db-lib-gen-log "Cleaning up '$_new_working_dir'."
-  rm -r $_new_working_dir;
+  rm -r $_new_working_dir/*
 fi
 

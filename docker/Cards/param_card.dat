@@ -80,7 +80,7 @@ Block MASS      #  Mass spectrum (kinematic masses)
         25     1.20000000E+02   # H        mass
        611 0.001 # FMASS
        622 0.01 # APMASS
-       623 171.3 #HPMASS
+       623 171.3 #HPMASS (tungsten)
 #            PDG       Width
 DECAY       611     0.00000000e+00   # ELWIDTH
 DECAY 622 0.00129 # APWIDTH

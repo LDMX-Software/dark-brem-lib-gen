@@ -36,10 +36,10 @@
 #*********************************************************************
         0     = lpp1  ! beam 1 type (0=NO PDF)
         0     = lpp2  ! beam 2 type (0=NO PDF)
-4.0 = ebeam1  ! beam 1 energy in GeV
-171.3 = ebeam2 ! beam 2 energy in GeV
-    0.000511  = mbeam1  ! beam 1 energy in GeV
-171.3 = mbeam2 ! beam 2 energy in GeV
+4.0 = ebeam1  ! incident electron beam energy in GeV
+171.3 = ebeam2 ! stationary tungsten target energy in GeV
+0.000511  = mbeam1  ! incident electron beam mass in GeV
+171.3 = mbeam2 ! stationary tungsten target mass in GeV
 
 #*********************************************************************
 # Beam polarization from -100 (left-handed) to 100 (right-handed)    *
