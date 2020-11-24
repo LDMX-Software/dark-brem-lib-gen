@@ -43,7 +43,7 @@ proc.communicate()
 scratch_dir = '/scratch/%s'%os.environ['USER']
 
 # Write the command to submit to the batch system, this includes everything except the per-job changes
-command  ="'mkdir -p {scratch_dir} && " #make sure scratch directory exists
+command  ="mkdir -p {scratch_dir} && " #make sure scratch directory exists
 command +="singularity run --no-home " #run command
 command +="--bind {out_dir},{scratch_dir}:/working_dir " #bindings to real space
 command +="{singularity_img} " #container image to run int
@@ -53,7 +53,6 @@ command +="--nevents {num_events} " #define number of events
 command +="--apmass {ap_mass} " #define the A' mass [GeV]
 command +="--run {run} " #define run number (acts as random seed)
 command +="-v" #verbose so that the log is in the batch system
-command += "'" #close single quote
 
 # Actually start submitting jobs
 for job in xrange(args.start_job,args.start_job+args.num_jobs):
@@ -81,7 +80,11 @@ for job in xrange(args.start_job,args.start_job+args.num_jobs):
         run = job
         )
 
-    full_cmd=args.batch_cmd+' '+specific_command
+    full_cmd="{batch_cmd} '{run_cmd}'".format(
+            batch_cmd = args.batch_cmd,
+            run_cmd = specific_command
+            )
+
     if args.test: 
         print(full_cmd)
     else:
