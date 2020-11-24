@@ -85,7 +85,7 @@ then
 
   # define run command
   #     we need to create and mount and large scratch directory for singularity to use for working
-  alias db-lib-gen='mkdir -p /scratch/$USER && singularity run --no-home --bind $(pwd),/scratch/$USER:/working_dir ${MG_SINGULARITY_IMG} --out $(pwd)'
+  alias db-lib-gen='mkdir -p .scratch/$USER && singularity run --no-home --bind $(pwd),.scratch/$USER:/working_dir ${MG_SINGULARITY_IMG} --out $(pwd)'
 
 else
   echo "ERROR: Neither docker nor singularity are installed."
