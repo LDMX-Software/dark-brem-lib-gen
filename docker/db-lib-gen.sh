@@ -199,23 +199,21 @@ sed -in "s/.*iseed.*/$_line_/" Cards/run_card.dat
 #_line_=" 2.0 = efmax ! maximum E for all f's"
 #sed -in "s/.*efmax.*/$_line_/" Cards/run_card.dat
 
+###############################################################################
+# Actually run MadGraph and generate events
+#   First Arg  : 0 for generating events serially (1 for in parallel)
+#   Second Arg : Prefix to attach to output events package
+#   
+#   The defininition of 'gen_events' is changed depending on if we are running
+#   with high verbosity or not. 
+#   Inherited Bash Variables:
+#     _prefix : string the MadGraph executable should attach to the events file
+#     _log    : full path to the file that the log should be written to
 if $_verbose
 then
-  gen_events() {
-    if ! ./bin/generate_events 0 "$1" | tee -a $_log
-    then
-      return 1
-    fi
-    return 0
-  }
+  alias gen_events='./bin/generate_events 0 $_prefix | tee -a $_log'
 else
-  gen_events() {
-    if ! ./bin/generate_events 0 "$1" &>> $_log
-    then
-      return 1
-    fi
-    return 0
-  }
+  alias gen_events='./bin/generate_events 0 $_prefix &>> $_log'
 fi
 
 for energy in $_energies
@@ -228,13 +226,11 @@ do
   sed -in "s/.*ebeam1.*/$_line_/" Cards/run_card.dat
   
   ###############################################################################
-  # Actually run MadGraph and generate events
-  #   First Arg  : 0 for generating events serially (1 for in parallel)
-  #   Second Arg : Prefix to attach to output events package
+  # Run the MadGraph executable and check if it errored out or not
   db-lib-gen-log "Starting job with $_apmass GeV A', $energy GeV beam, run number $_run, and $_nevents events."
-  if ! gen_events $_prefix
+  if ! gen_events
   then
-    db-lib-gen-fatal-error "MadGraph event generation exited with non-zero error code."
+    db-lib-gen-fatal-error "MadGraph event generation exited with non-zero error code $?."
     exit 110
   fi
   
