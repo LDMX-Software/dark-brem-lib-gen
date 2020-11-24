@@ -209,13 +209,19 @@ sed -in "s/.*iseed.*/$_line_/" Cards/run_card.dat
 #   Inherited Bash Variables:
 #     _prefix : string the MadGraph executable should attach to the events file
 #     _log    : full path to the file that the log should be written to
-alias gen_events_verbose='./bin/generate_events 0 $_prefix | tee -a $_log'
-alias gen_events_quiet='./bin/generate_events 0 $_prefix &>> $_log'
 if $_verbose
 then
-  gen_events=gen_events_verbose
+  gen_events() {
+    ./bin/generate_events 0 $_prefix | tee -a $_log && return 0
+    _mg_error_code=$?
+    return 1
+  }
 else
-  gen_events=gen_events_quiet
+  gen_events() {
+    ./bin/generate_events 0 $_prefix &>> $_log && return 0
+    _mg_error_code=$?
+    return 1
+  }
 fi
 
 for energy in $_energies
@@ -230,9 +236,9 @@ do
   ###############################################################################
   # Run the MadGraph executable and check if it errored out or not
   db-lib-gen-log "Starting job with $_apmass GeV A', $energy GeV beam, run number $_run, and $_nevents events."
-  if ! $gen_events
+  if ! gen_events
   then
-    db-lib-gen-fatal-error "MadGraph event generation exited with non-zero error code $?."
+    db-lib-gen-fatal-error "MadGraph event generation exited with non-zero error code $_mg_error_code."
     exit 110
   fi
   
