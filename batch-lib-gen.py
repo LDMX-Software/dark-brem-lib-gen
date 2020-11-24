@@ -11,24 +11,31 @@ parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 # required args
-parser.add_argument("-s","--singularity_img",required=True,type=str,help="Image to run configuration inside of.")
-parser.add_argument("-o","--out_dir",required=True,type=str,help="Directory to copy output to.")
-parser.add_argument("-n","--num_jobs",required=True,type=int,help="Number of jobs to run (if not input directory given).")
-parser.add_argument("-A","--ap_mass",required=True,type=float,help="A' mass [GeV] to generate a library for.")
+parser.add_argument("-s","--singularity_img",required=True,type=str,
+        help="Image to run configuration inside of.")
+parser.add_argument("-o","--out_dir",required=True,type=str,
+        help="Directory to copy output to.")
+parser.add_argument("-n","--num_jobs",required=True,type=int,
+        help="Number of jobs to run (if not input directory given).")
+parser.add_argument("-A","--ap_mass",required=True,type=float,
+        help="A' mass [GeV] to generate a library for.")
 
 # optional args
-parser.add_argument("--start_job",type=int,default=0,help="Starting number to use when counting jobs (and run numbers)")
-
-# rarely-used optional args
-parser.add_argument("-t","--test",action='store_true',dest='test',help="Don't submit the job to the batch.")
-parser.add_argument("--batch_cmd",type=str,help="Command to use to submit a single job to batch.",default="bsub -R 'select[centos7]' -q medium -W 2800")
-parser.add_argument("--incident_energies",type=str,help="String list of incident electron energies.",default="4.0 3.8 3.5 3.2 3.0 2.8 2.5 2.0")
+parser.add_argument("--start_job",type=int,default=0,
+        help="Starting number to use when counting jobs (and run numbers)")
+parser.add_argument("-t","--test",action='store_true',dest='test',
+        help="Don't submit the job to the batch.")
+parser.add_argument("--batch_cmd",type=str,
+        help="Command to use to submit a single job to batch.",
+        default="bsub -R 'select[centos7]' -q medium -W 2800")
+parser.add_argument("--incident_energies",type=str,
+        help="Space-separated string list of incident electron energies.",
+        default="4.0 3.8 3.5 3.2 3.0 2.8 2.5 2.0")
+parser.add_argument("--num_events",type=int,
+        help="Number of events per incident electron energy to ask MadGraph for.",
+        default=20000)
 
 args = parser.parse_args()
-
-# working script requires full paths so we get them here
-out_dir = os.path.realpath(args.out_dir)
-singularity_img = os.path.realpath(args.singularity_img)
 
 # Turn off emailing about jobs
 email_command = ['bash', '-c', 'export LSB_JOB_REPORT_MAIL=N && env']
@@ -71,12 +78,12 @@ for job in xrange(args.start_job,args.start_job+args.num_jobs):
     #end if not test
 
     specific_command = command.format(
-        out_dir = out_dir,
+        out_dir = os.path.realpath(args.out_dir),
         scratch_dir = scratch_dir,
-        singularity_img = singularity_img,
+        singularity_img = os.path.realpath(args.singularity_img),
         energies = args.incident_energies,
         ap_mass = args.ap_mass,
-        num_events = 20000,
+        num_events = args.num_events,
         run = job
         )
 
