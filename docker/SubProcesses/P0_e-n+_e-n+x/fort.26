@@ -1,2 +1,0 @@
-rm -f run.$script
-touch done.$script
