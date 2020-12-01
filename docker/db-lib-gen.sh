@@ -6,13 +6,15 @@ export _default_db_lib_gen_apmass="0.01"
 export _default_db_lib_gen_energies="4.0"
 export _default_db_lib_gen_run="3000"
 export _default_db_lib_gen_nevents="20000"
+export _default_db_lib_gen_max_recoil_e="100.0"
 
 db-lib-gen-help() {
   echo "MadGraph Dark Brem Event Library Generation."
   echo "This scripts assumes that it is being run inside of the tomeichlersmith/madgraph container."
   echo "  Usage: db-lib-gen [-h,--help] [-v,--verbose] [-o,--out out_dir] "
   echo "                    [-E,--energy energy0 [energy1 energy2 ...]] "
-  echo "                    [-A,--apmass apmass] [-r,--run run] [-N,--nevents N]"
+  echo "                    [-A,--apmass apmass] [-r,--run run]"
+  echo "                    [-N,--nevents N] [-M,--maxrecoil max_energy]"
   echo "    -h,--help    : Print this help message."
   echo "    -v,--verbose : Print messages from this script and MG to the terminal screen."
   echo "    -o,--out     : out_dir is the output directory for logging and lhe."
@@ -25,6 +27,8 @@ db-lib-gen-help() {
   echo "                   Default: $_default_db_lib_gen_run"
   echo "    -N,--nevents : N is the number of events to attempt to generate."
   echo "                   Default: $_default_db_lib_gen_nevents"
+  echo "    -M,--maxrecoil: max_energy is the maximum energy in GeV that the recoil electron is allowed to have."
+  echo "                   Default: $_default_db_lib_gen_max_recoil_e"
 }
 
 db-lib-gen-fatal-error() {
@@ -61,6 +65,7 @@ _out_dir=$_default_db_lib_gen_out_dir
 _apmass=$_default_db_lib_gen_apmass
 _energies=$_default_db_lib_gen_energies
 _run=$_default_db_lib_gen_run
+_max_recoil_e=$_default_db_lib_gen_max_recoil_e
 _nevents=$_default_db_lib_gen_nevents
 _verbose=false
 
@@ -146,9 +151,24 @@ do
         exit 107
       fi
       ;;
+    -M|--maxrecoil)
+      if [[ -z "$2" || "$2" =~ "-".* ]]
+      then
+        db-lib-gen-requires-arg $option
+        exit 108
+      elif [[ $2 =~ ^[.0-9]+$ ]]
+      then
+        _max_recoil_e=$2
+        shift
+        shift
+      else
+        db-lib-gen-requires-num-arg $option
+        exit 109
+      fi
+      ;;
     *)
       db-lib-gen-fatal-error "'$option' is not a valid option."
-      exit 108
+      exit 110
       ;;
   esac
 done
@@ -156,7 +176,7 @@ done
 if [[ -z "$_energies" ]]
 then
   db-lib-gen-requires-arg "-E, --energy"
-  exit 109
+  exit 111
 fi
 
 ###############################################################################
@@ -195,9 +215,9 @@ sed -in "s/.*nevents.*/$_line_/" Cards/run_card.dat
 _line_=$_run" = iseed ! rnd seed (0=assigned automatically=default))"
 sed -in "s/.*iseed.*/$_line_/" Cards/run_card.dat
 
-#TODO Maximum recoil energy
-#_line_=" 2.0 = efmax ! maximum E for all f's"
-#sed -in "s/.*efmax.*/$_line_/" Cards/run_card.dat
+# Maximum recoil energy
+_line_=$_max_recoil_e" = efmax ! maximum E for all f's"
+sed -in "s/.*efmax.*/$_line_/" Cards/run_card.dat
 
 ###############################################################################
 # Actually run MadGraph and generate events
@@ -230,7 +250,7 @@ do
   _prefix=${_library_name}_IncidentE_${energy}
 
   # energy of incoming beam in GeV
-  _line_=$energy" = ebeam1  ! beam 1 energy in GeV"
+  _line_=$energy" = ebeam1  ! incident electron energy in GeV"
   sed -in "s/.*ebeam1.*/$_line_/" Cards/run_card.dat
   
   ###############################################################################
