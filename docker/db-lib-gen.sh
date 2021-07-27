@@ -1,34 +1,34 @@
 #!/bin/bash
 
 export LANG=C #silences warning form perl
-export _default_db_lib_gen_out_dir=$(pwd)
-export _default_db_lib_gen_apmass="0.01"
-export _default_db_lib_gen_energies="4.0"
-export _default_db_lib_gen_run="3000"
-export _default_db_lib_gen_nevents="20000"
-export _default_db_lib_gen_max_recoil_e="1d5"
 
 db-lib-gen-help() {
-  echo "MadGraph Dark Brem Event Library Generation."
-  echo "This scripts assumes that it is being run inside of the tomeichlersmith/madgraph container."
-  echo "  Usage: db-lib-gen [-h,--help] [-v,--verbose] [-o,--out out_dir] "
-  echo "                    [-E,--energy energy0 [energy1 energy2 ...]] "
-  echo "                    [-A,--apmass apmass] [-r,--run run]"
-  echo "                    [-N,--nevents N] [-M,--maxrecoil max_energy]"
-  echo "    -h,--help    : Print this help message."
-  echo "    -v,--verbose : Print messages from this script and MG to the terminal screen."
-  echo "    -o,--out     : out_dir is the output directory for logging and lhe."
-  echo "                   Default: $_default_db_lib_gen_out_dir"
-  echo "    -E,--energy  : energy{0..} is the energy of the incident electron beam in GeV."
-  echo "                   Default: $_default_db_lib_gen_energies"
-  echo "    -A,--apmass  : apmass is the mass of the A' in GeV."
-  echo "                   Default: $_default_db_lib_gen_apmass"
-  echo "    -r,--run     : run is the run number which acts as the random numbe seed."
-  echo "                   Default: $_default_db_lib_gen_run"
-  echo "    -N,--nevents : N is the number of events to attempt to generate."
-  echo "                   Default: $_default_db_lib_gen_nevents"
-  echo "    -M,--maxrecoil: max_energy is the maximum energy in GeV that the recoil electron is allowed to have."
-  echo "                   Default: $_default_db_lib_gen_max_recoil_e"
+cat <<\HELP
+  MadGraph Dark Brem Event Library Generation.
+  This scripts assumes that it is being run inside of the tomeichlersmith/madgraph container.
+    Usage: db-lib-gen [-h,--help] [-v,--verbose] [-o,--out out_dir] 
+                      [--max-energy M] [--min-energy m] [--max-rel-step s]
+                      [-A,--apmass apmass] [-r,--run run]
+                      [-N,--nevents N] [-M,--maxrecoil max_energy]
+      -h,--help      : Print this help message.
+      -v,--verbose   : Print messages from this script and MG to the terminal screen.
+      -o,--out       : out_dir is the output directory for logging and lhe.
+                       Default: present working directory
+      --max-energy   : M is the maximum energy of the incident electron beam in GeV.
+                       Default: 4.0
+      --min-energy   : M is the minimum energy of the incident electron beam in GeV.
+                       Default: 2.0
+      --max-rel-step : s is the maximum relative step size between sampling points in library
+                       Default: 0.1 (i.e. 10%)
+      -A,--apmass    : apmass is the mass of the A' in GeV.
+                       Default: 0.01
+      -r,--run       : run is the run number which acts as the random numbe seed.
+                       Default: 3000
+      -N,--nevents   : N is the number of events to attempt to generate.
+                       Default: 20000
+      -M,--maxrecoil : max_energy is the maximum energy in GeV that the recoil electron is allowed to have.
+                       Default: 1d5
+HELP
 }
 
 db-lib-gen-fatal-error() {
@@ -117,12 +117,14 @@ copy-and-check() {
 
 ###############################################################################
 # Save inputs to helpfully named variables
-_out_dir=$_default_db_lib_gen_out_dir
-_apmass=$_default_db_lib_gen_apmass
-_energies=$_default_db_lib_gen_energies
-_run=$_default_db_lib_gen_run
-_max_recoil_e=$_default_db_lib_gen_max_recoil_e
-_nevents=$_default_db_lib_gen_nevents
+_out_dir=$(pwd)
+_apmass="0.01"
+_min_energy="2.0"
+_max_energy="4.0"
+_max_rel_step="0.1"
+_run="3000"
+_max_recoil_e="1d5"
+_nevents="20000"
 _verbose=false
 
 while [[ $# -gt 0 ]]
@@ -162,19 +164,49 @@ do
         exit 102
       fi
       ;;
-    -E|--energy)
+    --max-energy)
       if [[ -z "$2" || "$2" =~ "-".* ]]
       then
         db-lib-gen-requires-arg $option
-        exit 103
+        exit 101
+      elif [[ $2 =~ ^[.0-9]+$ ]]
+      then
+        _max_energy="$2"
+        shift
+        shift
       else
-        shift #get past option flag
-        _energies=""
-        while [[ "$1" =~ ^[.0-9]+$ ]]
-        do
-          _energies="${_energies}$1 "
-          shift
-        done
+        db-lib-gen-requires-num-arg $option
+        exit 102
+      fi
+      ;;
+    --min-energy)
+      if [[ -z "$2" || "$2" =~ "-".* ]]
+      then
+        db-lib-gen-requires-arg $option
+        exit 101
+      elif [[ $2 =~ ^[.0-9]+$ ]]
+      then
+        _min_energy="$2"
+        shift
+        shift
+      else
+        db-lib-gen-requires-num-arg $option
+        exit 102
+      fi
+      ;;
+    --max-rel-step)
+      if [[ -z "$2" || "$2" =~ "-".* ]]
+      then
+        db-lib-gen-requires-arg $option
+        exit 101
+      elif [[ $2 =~ ^[.0-9]+$ ]]
+      then
+        _max_rel_step="$2"
+        shift
+        shift
+      else
+        db-lib-gen-requires-num-arg $option
+        exit 102
       fi
       ;;
     -r|--run)
@@ -228,12 +260,6 @@ do
       ;;
   esac
 done
-
-if [[ -z "$_energies" ]]
-then
-  db-lib-gen-requires-arg "-E, --energy"
-  exit 111
-fi
 
 ###############################################################################
 # Define helpful variables
@@ -300,8 +326,13 @@ else
   }
 fi
 
-for energy in $_energies
+# calculate number of sampling points in library
+_num_energies=$(python3 -c "from math import log10, ceil; print(ceil(log10(${_min_energy}/${_max_energy})/log10(1-${_max_rel_step})))")
+# loop over entries in library sequentially
+for ie in $(seq ${_num_energies})
 do
+  energy=$(python3 -c "print(${_max_energy} * (1. - ${_max_rel_step})**(${ie}-1))")
+
   # define this item in the library with its own name
   _prefix=${_library_name}_IncidentE_${energy}
 
