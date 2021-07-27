@@ -327,11 +327,11 @@ else
 fi
 
 # calculate number of sampling points in library
-_num_energies=$(python -c "from math import log10, ceil; print(ceil(log10(${_min_energy}/${_max_energy})/log10(1-${_max_rel_step})))")
+_num_energies=$(python3 -c "from math import log10, ceil; print(ceil(log10(${_min_energy}/${_max_energy})/log10(1-${_max_rel_step})))")
 # loop over entries in library sequentially
 for ie in $(seq ${_num_energies})
 do
-  energy=$(python -c "print(${_max_energy} * (1. - ${_max_rel_step})**(${ie}-1))")
+  energy=$(python3 -c "print(${_max_energy} * (1. - ${_max_rel_step})**(${ie}-1))")
 
   # define this item in the library with its own name
   _prefix=${_library_name}_IncidentE_${energy}

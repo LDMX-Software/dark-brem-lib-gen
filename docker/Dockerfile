@@ -3,7 +3,8 @@ FROM ubuntu:18.04
 RUN apt-get update &&\
     apt-get install -y \
       make \
-      gfortran 
+      gfortran \
+      python3
       
 COPY . /madgraph
 RUN chmod 777 /madgraph/
