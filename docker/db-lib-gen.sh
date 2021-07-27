@@ -59,6 +59,62 @@ db-lib-gen-in-singularity() {
   return 1;
 }
 
+# Our special copying function,
+#   sometimes jobs interrupt the copying mid-way through
+#   (don't know why this happens)
+#   but this means we need to check that the copied file
+#   matches the actually generated file. This is done
+#   using 'cmp -s' which does a bit-wise comparison and
+#   returns a failure status upon the first mis-match.
+#   
+#   Sometimes (usually for larger files like ours),
+#   the kernel decides to put the file into a buffer
+#   and have cp return success. This is done because
+#   the computer can have the copy continue on in the
+#   background without interfering with the user.
+#   In our case, this sometimes causes a failure because
+#   we attempt to compare the copied file (which is only
+#   partial copied) to the original. To solve this
+#   niche issue, we can simply add the 'sync' command
+#   which tells the terminal to wait for these write
+#   buffers to finish before moving on.
+#
+#   We return a success-status of 0 if we cp and cmp.
+#   Otherwise, we make sure any partially-copied files
+#   are removed from the destination directory and try again
+#   until the input number of tries are attempted.
+#   If we get through all tries without return success,
+#   then we return a failure status of 1.
+#
+#   Arguments
+#     1 - Time in seconds to sleep between tries
+#     2 - Number of tries to attempt before giving up
+#     3 - source file to copy
+#     4 - destination directory to put copy in
+copy-and-check() {
+  local _sleep_between_tries="$1"
+  local _num_tries="$2"
+  local _source="$3"
+  local _dest_dir="$4"
+  for try in $(seq $_num_tries); do
+    if cp -t $_dest_dir $_source; then
+      sync #wait for large files to actually leave buffer
+      if cmp -s $_source $_dest_dir/$_source; then
+        #SUCCESS!
+        return 0;
+      else
+        #Interrupted during copying
+        #   delete half-copied file
+        rm $_dest_dir/$_source
+      fi
+    fi
+    sleep $_sleep_between_tries
+  done
+  # make it here if we didn't have a success
+  return 1
+}
+
+
 ###############################################################################
 # Save inputs to helpfully named variables
 _out_dir=$_default_db_lib_gen_out_dir
@@ -297,10 +353,20 @@ then
   exit 114
 fi
 
-if ! cp ${_library_name}.tar.gz ${_out_dir} 
+# check if output directory exists
+#   we wait until here because sometimes
+#   hdfs is connected when we start the job
+#   but isn't connected at the end
+if [[ ! -d $_out_dir ]]; then
+  echo "Output directory '$_out_dir' doesn't exist!"
+  exit 115
+fi
+
+# copy over each output file, checking to make sure it worked
+if ! copy-and-check 30 10 ${_library_name}.tar.gz ${_out_dir} 
 then 
   db-lib-gen-fatal-error "Could not copy library '${_library_name}.tar.gz' to '${_out_dir}'."
-  exit 115
+  exit 116
 fi
 
 ###############################################################################
