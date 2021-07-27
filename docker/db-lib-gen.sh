@@ -6,7 +6,7 @@ export _default_db_lib_gen_apmass="0.01"
 export _default_db_lib_gen_energies="4.0"
 export _default_db_lib_gen_run="3000"
 export _default_db_lib_gen_nevents="20000"
-export _default_db_lib_gen_max_recoil_e="100.0"
+export _default_db_lib_gen_max_recoil_e="1d5"
 
 db-lib-gen-help() {
   echo "MadGraph Dark Brem Event Library Generation."
