@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 
-F77 = f95 -std=legacy
+F77 = gfortran -std=legacy
 FFLAGS        = -O -fPIC
 LIBRARY	      = ../libpdf.so
 LIBDIR        = ../../lib/

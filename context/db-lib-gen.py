@@ -19,7 +19,8 @@ lepton_options = {
     }
 
 def in_singularity() :
-    return os.path.isfile('/singularity')
+    return False
+    #return os.path.isfile('/singularity')
 
 class SafeDict(dict) :
     """ Idea for this type of look-up dictionary is provided by
