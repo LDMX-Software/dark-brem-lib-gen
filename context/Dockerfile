@@ -5,6 +5,7 @@ RUN apk update &&\
       bash \
       perl \
       make \
+      musl-dev \
       gfortran \
       python3
       
