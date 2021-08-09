@@ -29,17 +29,17 @@
 #*********************************************************************
 # Number of events and rnd seed                                      *
 #*********************************************************************
-10 = nevents ! Number of unweighted events requested
-3000 = iseed ! rnd seed (0=assigned automatically=default))
+{nevents} = nevents ! Number of unweighted events requested
+{run}     = iseed ! rnd seed (0=assigned automatically=default))
 #*********************************************************************
 # Collider type and energy                                           *
 #*********************************************************************
         0     = lpp1  ! beam 1 type (0=NO PDF)
         0     = lpp2  ! beam 2 type (0=NO PDF)
-4.0 = ebeam1  ! incident electron energy in GeV
-171.3 = ebeam2 ! stationary target energy in GeV
-0.000511  = mbeam1  ! incident electron beam mass in GeV
-171.3 = mbeam2 ! stationary target mass in GeV
+{lepton_energy} = ebeam1  ! incident electron energy in GeV
+{target_mass}   = ebeam2 ! stationary target energy in GeV
+{lepton_mass}   = mbeam1  ! incident electron beam mass in GeV
+{target_mass}   = mbeam2 ! stationary target mass in GeV
 
 #*********************************************************************
 # Beam polarization from -100 (left-handed) to 100 (right-handed)    *
@@ -78,7 +78,7 @@
 
 
  0.0 = ef        ! minimum E for all f's
-100.0 = efmax ! maximum E for all f's
+ {max_recoil_energy} = efmax ! maximum E for all f's
  0.0 = thetafmin ! min angle for both f's
  100.0 = thetafmax ! max angle for both f's
  0.0 = thetaxfmin ! min angle (x direction) for both f's
