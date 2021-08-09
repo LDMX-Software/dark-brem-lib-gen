@@ -4,7 +4,7 @@ name: Build
 on:
   push:
     paths:
-      - 'docker/**'
+      - 'context/**'
       - '.github/workflows/build.yml'
     branches:
       - '**'
@@ -79,8 +79,8 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v2
       with:
-        context: docker
-        file: docker/Dockerfile
+        context: context
+        file: context/Dockerfile
         push: false # don't push to docker hub yet
         load: true # allow image to be availabe to the docker program later in this job
         cache-from: type=local,src=/tmp/.buildx-cache

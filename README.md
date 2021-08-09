@@ -12,7 +12,10 @@ Currently, the MadGraph event generation can handle the following variables.
 
 - Number of Events to Generate
 - Mass of A' in GeV
-- Incident Electron Beam Energy in GeV
+- Target material (from list of options)
+- Lepton (muon or electron)
+- Maximum and Minimum Incident Beam Energy in GeV
+- Relative step between sampling points in library
 - Run Number (used as random number seed) 
 
 The corresponding DockerHub repository for this image is [tomeichlersmith/dark-brem-lib-gen](https://hub.docker.com/repository/docker/tomeichlersmith/dark-brem-lib-gen).
