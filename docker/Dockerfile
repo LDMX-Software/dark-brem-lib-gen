@@ -2,6 +2,7 @@ FROM alpine:3.14
 
 RUN apk update &&\
     apk add --no-cache \
+      bash \
       make \
       gfortran \
       python3
@@ -13,4 +14,4 @@ RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
     chmod +x makefile bin/*
 
-ENTRYPOINT [ "python3", "/madgraph/db-lib-gen.py" ]
+ENTRYPOINT [ "python3", "db-lib-gen.py" ]
