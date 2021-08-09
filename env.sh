@@ -6,7 +6,7 @@
 #   libraries.
 ###############################################################################
 
-export _env_default_tag="edge"
+export _env_default_tag="latest"
 
 env-help() {
   echo "Running Dark Brem Event Library Generation Container."
