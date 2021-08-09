@@ -5,7 +5,7 @@
 #
 # ----------------------------------------------------------------------------
 
-F77           = f77
+F77 = f95 -std=legacy
 FFLAGS        = -O -ffixed-line-length-132
 LIBRARY       = ../libmodel.a
 LIBDIR        = ../../lib/
