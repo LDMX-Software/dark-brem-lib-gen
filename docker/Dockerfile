@@ -12,7 +12,6 @@ RUN chmod 777 /madgraph/
 WORKDIR /madgraph/
 RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
-    chmod +x makefile bin/* &&\
-    /usr/local/bin/f95 --version
+    chmod +x makefile bin/*
 
 ENTRYPOINT [ "python3", "db-lib-gen.py" ]
