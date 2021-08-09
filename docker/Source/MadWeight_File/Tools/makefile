@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 
-F77 = gfortran -std=legacy
+F77 = f95 -std=legacy
 G77	      = g77
 FFLAGS        = -O -ffixed-line-length-132
 LIBDIR        = ../../../lib/

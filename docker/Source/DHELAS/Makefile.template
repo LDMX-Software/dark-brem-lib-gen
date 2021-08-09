@@ -14,7 +14,7 @@
 # the 2003 version of MadEvent
 # ----------------------------------------------------------------------------
 
-FC = gfortran -std=legacy
+FC = f95 -std=legacy
 
 FFLAGS        = -O -I.
 
