@@ -254,12 +254,40 @@ do
         exit 109
       fi
       ;;
+    --target)
+      if [[ -z "$2" || "$2" =~ "-".* ]]
+      then
+        db-lib-gen-requires-arg $option
+        exit 108
+      else
+        _target=$2
+        shift
+        shift
+      fi
+      ;;
     *)
       db-lib-gen-fatal-error "'$option' is not a valid option."
       exit 110
       ;;
   esac
 done
+
+# Determine target parameters from name
+_target_mass=noop
+_target_A=noop
+_target_Z=noop
+if [[ ${_target} == "tungsten" ]]; then
+  _target_mass=171.3
+  _target_A=184.0
+  _target_Z=74.0
+elif [[ ${_target} == "silicon" ]]; then
+  _target_mass=26.15
+  _target_A=28.085
+  _target_Z=14.0
+else
+  db-lib-gen-fatal-error "'${_target}' target material not recognized."
+  exit 110
+fi
 
 ###############################################################################
 # Define helpful variables
@@ -288,6 +316,18 @@ touch $_log
 # Put in the A' mass
 _line_=622" "$_apmass" ""# APMASS"
 sed -in "s/622.*# APMASS/$_line_/" Cards/param_card.dat
+
+# Target properties
+_line_=$_target_mass" = ebeam2 ! stationary target energy in GeV"
+sed -in "s/.*ebeam2.*/$_line_/" Cards/run_card.dat
+_line_=$_target_mass" = mbeam2 ! stationary target mass in GeV"
+sed -in "s/.*mbeam2.*/$_line_/" Cards/run_card.dat
+_line_="       623 $_target_mass #HPMASS (target nuceleus)"
+sed -in "s/.*HPMASS.*/$_line_/" Cards/param_card.dat
+_line_="        2    $_target_Z_ #Znuc, nuclear charge"
+sed -in "s/.*Znuc.*/$_line_/" Cards/param_card.dat
+_line="        Anuc = $_target_A_"
+sed -in "s/.*Anuc = /$_line_/" Source/MODEL/couplings.f
 
 # Number of events to generate
 _line_=$_nevents" = nevents ! Number of unweighted events requested"
