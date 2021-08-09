@@ -33,7 +33,7 @@
 #*********************************************************************
 # Begin PROCESS # This is TAG. Do not modify this line
 
-{lepton} N+ > {lepton} N+ x      # Radiative
+e- N+ > e- N+ x      # Radiative
 QCD=0             # Max QCD couplings
 QED=1             # Max QED couplings
 QFD=0 

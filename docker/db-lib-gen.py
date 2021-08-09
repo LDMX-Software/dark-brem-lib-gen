@@ -14,8 +14,8 @@ target_options = {
     }
 
 lepton_options = {
-    'electron' : { 'mass' : 0.000511, 'id' : 'e-' },
-    'muon' : { 'mass' : 0.105, 'id' : 'mu-' }
+    'electron' : { 'mass' : 0.000511, 'pdg' : '11' },
+    'muon' : { 'mass' : 0.10565837, 'pdg' : '13' }
     }
 
 def in_singularity() :
@@ -74,6 +74,9 @@ def generate() :
 
     arg = parser.parse_args()
 
+    lepton = lepton_options[arg.lepton]
+    target = target_options[arg.target]
+
     library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{arg.min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
     library_dir=os.path.join(arg.out_dir,library_name)
 
@@ -90,14 +93,12 @@ def generate() :
 
     write('Cards/param_card.dat', 
         ap_mass = arg.apmass, 
-        target_Z = target_options[arg.target]['Z'], 
-        target_mass = target_options[arg.target]['mass'])
+        lepton_mass = lepton['mass'],
+        target_Z = target['Z'], 
+        target_mass = target['mass'])
 
     write('Source/MODEL/couplings.f',
-        target_A = target_options[arg.target]['A'])
-
-    write('Cards/proc_card.dat',
-        lepton = lepton_options[arg.lepton]['id'])
+        target_A = target['A'])
 
     min_energy = arg.max_energy/2.
     if arg.min_energy is not None :
@@ -117,9 +118,11 @@ def generate() :
 
         subprocess.run(['./bin/generate_events','0',prefix],check = True)
 
-        with gzip.open(f'Events/{prefix}_unweighted_events.lhe.gz','rb') as zipped_lhe :
-            with open(f'{library_dir}/{prefix}_unweighted_events.lhe','wb') as lhe :
-                shutil.copyfileobj(zipped_lhe,lhe)
+        with gzip.open(f'Events/{prefix}_unweighted_events.lhe.gz','rt') as zipped_lhe :
+            with open(f'{library_dir}/{prefix}_unweighted_events.lhe','w') as lhe :
+                # translate PDGs of 11 to correct lepton PDG just in case we ran with muons
+                content = zipped_lhe.read().replace(' 11 ',f' {lepton["pdg"]} ')
+                lhe.write(content)
 
         energy *= 1.-arg.rel_step
 
