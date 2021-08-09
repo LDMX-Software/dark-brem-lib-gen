@@ -14,8 +14,8 @@ target_options = {
     }
 
 lepton_options = {
-    'electron' : { 'mass' : 0.000511, 'pdg' : 11 },
-    #'muon' : { 'mass' : 0.105, 'pdg' : 13 }
+    'electron' : { 'mass' : 0.000511, 'id' : 'e-' },
+    'muon' : { 'mass' : 0.105, 'id' : 'mu-' }
     }
 
 def in_singularity() :
@@ -74,7 +74,7 @@ def generate() :
 
     arg = parser.parse_args()
 
-    library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{arg.min_energy}_RelEStep_${arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
+    library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{arg.min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
     library_dir=os.path.join(arg.out_dir,library_name)
 
     os.makedirs(arg.out_dir, exist_ok = True)
@@ -96,6 +96,9 @@ def generate() :
     write('Source/MODEL/couplings.f',
         target_A = target_options[arg.target]['A'])
 
+    write('Cards/proc_card.dat',
+        lepton = lepton_options[arg.lepton]['id'])
+
     min_energy = arg.max_energy/2.
     if arg.min_energy is not None :
         min_energy = arg.min_energy
@@ -107,7 +110,8 @@ def generate() :
             run = arg.run,
             lepton_energy = energy,
             lepton_mass = lepton_options[arg.lepton]['mass'],
-            nucmass = target_options[arg.target]['mass'])
+            max_recoil_energy = arg.max_recoil,
+            target_mass = target_options[arg.target]['mass'])
 
         prefix = f'{library_name}_IncidentEnergy_{energy}'
 
@@ -116,6 +120,8 @@ def generate() :
         with gzip.open(f'Events/{prefix}_unweighted_events.lhe.gz','rb') as zipped_lhe :
             with open(f'{library_dir}/{prefix}_unweighted_events.lhe','wb') as lhe :
                 shutil.copyfileobj(zipped_lhe,lhe)
+
+        energy *= 1.-arg.rel_step
 
     if arg.pack :
         with tarfile.open(f'{arg.out_dir}/{library_name}.tar.gz','w:gz') as tar_handle :
