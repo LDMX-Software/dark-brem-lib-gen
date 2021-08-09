@@ -13,4 +13,4 @@ RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
     chmod +x makefile db-lib-gen.sh bin/*
 
-ENTRYPOINT [ "/madgraph/db-lib-gen.sh" ]
+ENTRYPOINT [ "python3", "/madgraph/db-lib-gen.py" ]
