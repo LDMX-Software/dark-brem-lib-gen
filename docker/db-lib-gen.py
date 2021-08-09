@@ -91,6 +91,8 @@ def generate() :
         os.chdir(f'{new_working_dir}/madgraph/')
     # done with movement
 
+    os.environ['LD_LIBRARY_PATH'] = f'{os.environ["LD_LIBRARY_PATH"]}:{os.getcwd()/lib}'
+
     write('Cards/param_card.dat', 
         ap_mass = arg.apmass, 
         lepton_mass = lepton['mass'],
