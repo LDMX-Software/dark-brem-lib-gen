@@ -1,7 +1,7 @@
 
 # Dark Brem Event Generation using MadGraph and Docker
 
-### docker
+### context
 
 <a href="https://github.com/tomeichlersmith/mg-dark-brem/actions" alt="Actions">
     <img src="https://github.com/tomeichlersmith/mg-dark-brem/workflows/Build/badge.svg" />
