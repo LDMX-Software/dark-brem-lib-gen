@@ -1,8 +1,7 @@
-FROM alpine:3.14
+FROM ubuntu:19.08
 
-RUN apk update &&\
-    apk add --no-cache \
-      bash \
+RUN apt-get update &&\
+    apt-get install -y \
       make \
       gfortran \
       python3
