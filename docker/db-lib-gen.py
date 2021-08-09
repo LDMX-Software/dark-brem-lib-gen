@@ -96,8 +96,12 @@ def generate() :
     write('Source/MODEL/couplings.f',
         target_A = target_options[arg.target]['A'])
 
+    min_energy = arg.max_energy/2.
+    if arg.min_energy is not None :
+        min_energy = arg.min_energy
+
     energy = arg.max_energy
-    while energy > arg.min_energy*(1.-arg.rel_step) :
+    while energy > min_energy*(1.-arg.rel_step) :
         write('Cards/run_card.dat',
             nevents = arg.nevents,
             run = arg.run,
