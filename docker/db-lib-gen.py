@@ -6,6 +6,7 @@ import gzip
 import shutil
 import tarfile
 import subprocess
+import sys
 
 target_options = {
     'tungsten' : { 'mass' : 171.3, 'A' : 184.0, 'Z' : 74.0 },
@@ -50,15 +51,15 @@ def generate() :
         help='Maximum energy of the incident lepton beam in GeV')
     parser.add_argument('--min_energy',default=None,type=float,
         help='Miminum energy of the incident lepton beam in GeV (default is half max).')
-    parser.add_argement('--rel_step',default=0.1,type=float,
+    parser.add_argument('--rel_step',default=0.1,type=float,
         help='Relative step size between sampling points in library.')
     parser.add_argument('--max_recoil',default='1d5',
         help='Maximum energy the recoil lepton is allowed to have in GeV.')
     parser.add_argument('--apmass',default=0.01,type=float,
         help='Mass of the dark photon (A\') in GeV')
-    parser.add_argument('--target',default='tungsten',options=target_options.keys(),
+    parser.add_argument('--target',default='tungsten',choices=target_options.keys(),
         help='Target material to shoot leptons at.')
-    parser.add_argument('--lepton',default='electron',options=lepton_options.keys(),
+    parser.add_argument('--lepton',default='electron',choices=lepton_options.keys(),
         help='Leptons to shoot.')
 
     arg = parser.parse_args()
@@ -112,8 +113,5 @@ def generate() :
         shutil.rmtree(new_working_dir)
 
 if __name__ == '__main__' :
-    try :
-      generate()
-    except :
-      sys.exit(f'{sys.exc_info()[0]:s}')
+    generate()
 
