@@ -126,6 +126,7 @@ _run="3000"
 _max_recoil_e="1d5"
 _nevents="20000"
 _verbose=false
+_target="tungsten"
 
 while [[ $# -gt 0 ]]
 do
