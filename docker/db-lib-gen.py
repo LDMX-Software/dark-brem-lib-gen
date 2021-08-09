@@ -21,6 +21,16 @@ lepton_options = {
 def in_singularity() :
     return os.path.isfile('/singularity')
 
+class SafeDict(dict) :
+    """ Idea for this type of look-up dictionary is provided by
+    https://stackoverflow.com/a/17215533
+
+    Basically, we skip any keys that don't have values by leaving
+    the key (with the curly-braces) in the file.
+    """
+    def __missing__(self, key) :
+        return '{'+key+'}'
+
 def write(fp, **kwargs) :
     template_f = f'{fp}.tmpl'
     if not os.path.isfile(template_f) :
@@ -29,7 +39,7 @@ def write(fp, **kwargs) :
     with open(fp+'.tmpl','r') as f :
         t = f.read()
     # insert values
-    t = t.format(**kwargs)
+    t = t.format_map(SafeDict(**kwargs))
     # write file content
     with open(fp,'w') as f :
         f.write(t)
