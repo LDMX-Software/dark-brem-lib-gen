@@ -292,7 +292,7 @@ fi
 
 ###############################################################################
 # Define helpful variables
-_library_name=electron_tungsten_MaxE_${_max_energy}_MinE_${_min_energy}_RelEStep_${_max_rel_step}_UndecayedAP_mA_${_apmass}_run_$_run
+_library_name=electron_${_target}_MaxE_${_max_energy}_MinE_${_min_energy}_RelEStep_${_max_rel_step}_UndecayedAP_mA_${_apmass}_run_$_run
 
 if db-lib-gen-in-singularity
 then
