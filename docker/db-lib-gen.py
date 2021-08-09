@@ -110,3 +110,10 @@ def generate() :
 
     if in_singularity() :
         shutil.rmtree(new_working_dir)
+
+if __name__ == '__main__' :
+    try :
+      generate()
+    except :
+      sys.exit(f'{sys.exc_info()[0]:s}')
+
