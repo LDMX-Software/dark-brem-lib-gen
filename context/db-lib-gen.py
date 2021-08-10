@@ -77,18 +77,24 @@ def generate() :
     lepton = lepton_options[arg.lepton]
     target = target_options[arg.target]
 
-    library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{arg.min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
+    min_energy = arg.max_energy/2.
+    if arg.min_energy is not None :
+        min_energy = arg.min_energy
+
+    library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
     library_dir=os.path.join(arg.out_dir,library_name)
 
     os.makedirs(arg.out_dir, exist_ok = True)
     os.makedirs(library_dir, exist_ok = True)
 
+    # make sure we are in the correct directory
+    os.chdir('/madgraph')
+
     if in_singularity() :
         # move to /working_dir
         new_working_dir=f'/working_dir/{library_name}'
-        os.makedirs(new_working_dir)
-        shutil.copytree('/madgraph',new_working_dir)
-        os.chdir(f'{new_working_dir}/madgraph/')
+        shutil.copytree('/madgraph/',new_working_dir)
+        os.chdir(new_working_dir)
     # done with movement
 
     write('Cards/param_card.dat', 
@@ -99,10 +105,6 @@ def generate() :
 
     write('Source/MODEL/couplings.f',
         target_A = target['A'])
-
-    min_energy = arg.max_energy/2.
-    if arg.min_energy is not None :
-        min_energy = arg.min_energy
 
     energy = arg.max_energy
     while energy > min_energy*(1.-arg.rel_step) :
