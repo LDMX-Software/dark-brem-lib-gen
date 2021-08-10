@@ -126,7 +126,7 @@ def generate() :
                 content = zipped_lhe.read().replace(' 11 ',f' {lepton["pdg"]} ')
                 lhe.write(content)
 
-        energy *= 1.-arg.rel_step
+        energy = round(energy*(1.-arg.rel_step),3)
 
     if arg.pack :
         with tarfile.open(f'{arg.out_dir}/{library_name}.tar.gz','w:gz') as tar_handle :
