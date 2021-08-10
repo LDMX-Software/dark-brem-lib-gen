@@ -1,8 +1,11 @@
-FROM ubuntu:18.04
+FROM alpine:3.14
 
-RUN apt-get update &&\
-    apt-get install -y \
+RUN apk update &&\
+    apk add --no-cache \
+      bash \
+      perl \
       make \
+      musl-dev \
       gfortran \
       python3
       
