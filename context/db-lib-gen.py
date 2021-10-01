@@ -81,10 +81,13 @@ def generate() :
     if arg.min_energy is not None :
         min_energy = arg.min_energy
 
-    library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
-    library_dir=os.path.join(arg.out_dir,library_name)
+    # expecting output directory to be full path
+    out_dir = os.path.realpath(arg.out_dir)
 
-    os.makedirs(arg.out_dir, exist_ok = True)
+    library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
+    library_dir=os.path.join(out_dir,library_name)
+
+    os.makedirs(out_dir    , exist_ok = True)
     os.makedirs(library_dir, exist_ok = True)
 
     # make sure we are in the correct directory
@@ -129,7 +132,7 @@ def generate() :
         energy = round(energy*(1.-arg.rel_step),3)
 
     if arg.pack :
-        with tarfile.open(f'{arg.out_dir}/{library_name}.tar.gz','w:gz') as tar_handle :
+        with tarfile.open(f'{out_dir}/{library_name}.tar.gz','w:gz') as tar_handle :
             tar_handle.add(library_dir)
 
         shutil.rmtree(library_dir)
