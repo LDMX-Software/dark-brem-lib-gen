@@ -10,9 +10,9 @@ parser = argparse.ArgumentParser('python3 gen_collection.py',
     formatter_class=argparse.RawDescriptionHelpFormatter)
 
 parser.add_argument('-s',metavar='SING_IMG',dest='singularity_img',required=True,help='dark-brem-lib-gen image to use for generation.')
-parser.add_argument('--target',choices=['tungsten','silicon'],required=True,help='Target material for leptons to be fired at.')
-parser.add_argument('--lepton',choices=['electron','muon'],required=True,help='Lepton to do the dark brem.')
-parser.add_argument('--max_energy',type=float,required=True,help='Maximum incident lepton energy in GeV.')
+parser.add_argument('-t','--target',choices=['tungsten','silicon'],required=True,help='Target material for leptons to be fired at.')
+parser.add_argument('-l','--lepton',choices=['electron','muon'],required=True,help='Lepton to do the dark brem.')
+parser.add_argument('-m','--max_energy',type=float,required=True,help='Maximum incident lepton energy in GeV.')
 
 parser.add_argument('--no_check',action='store_true',help='Don\' check with user before submitting.')
 
@@ -30,7 +30,7 @@ run_script = os.path.realpath(f'{local_dir()}/umn-specific/batch/run_db_lib_gen.
 
 jobs = []
 for m in mass_points :
-    jobs.extend([{'apmass' : str(m), 'run' : r} for r in range(start_run, start_run+num_libs_per_mass)])
+    jobs.extend([{'apmass' : str(m), 'run' : str(r)} for r in range(start_run, start_run+num_libs_per_mass)])
 
 img_args = f'--target {arg.target} --lepton {arg.lepton} --max_energy {arg.max_energy}'
 job_instructions = JobInstructions(run_script, collection_dir, singularity_img, None, program = None,
