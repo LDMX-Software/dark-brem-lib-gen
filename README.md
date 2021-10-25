@@ -1,6 +1,16 @@
 
 # Dark Brem Event Generation using MadGraph and Docker
 
+## Quick Start
+If you aren't developing the container and just wish to use it,
+you do not need to clone this entire repository. You can simply download
+the environment script and start using it.
+
+```
+wget https://raw.githubusercontent.com/tomeichlersmith/dark-brem-lib-gen/main/env.sh
+source env.sh
+```
+
 ### context
 
 <a href="https://github.com/tomeichlersmith/mg-dark-brem/actions" alt="Actions">
