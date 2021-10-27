@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'context/**'
+      - 'env.sh'
       - '.github/workflows/build.yml'
     branches:
       - '**'
