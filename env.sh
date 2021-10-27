@@ -111,7 +111,7 @@ if hash docker &> /dev/null; then
 
   # Run the container
   __dbgen_run() {
-    docker run --rm -it 
+    docker run --rm -it \
       -v $(__dbgen_dest_mount) \
       -v $(__dbgen_work_mount) \
       -u $(id -u ${USER}):$(id -g ${USER}) \
