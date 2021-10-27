@@ -50,8 +50,6 @@ def generate() :
     
     parser.add_argument('--pack',default=False,action='store_true',
         help='Package the library into a tar-ball after it is written to the output directory.')
-    parser.add_argument('--out_dir',default=os.getcwd(),
-        help='Directory to output library archive.')
     parser.add_argument('--run',default=3000,type=int,
         help='Run number for MadGraph which acts as the random number seed.')
     parser.add_argument('--nevents',default=20000,type=int,
@@ -81,8 +79,8 @@ def generate() :
     if arg.min_energy is not None :
         min_energy = arg.min_energy
 
-    # expecting output directory to be full path
-    out_dir = os.path.realpath(arg.out_dir)
+    # user mounts output directory to specific location in container
+    out_dir = '/output'
 
     library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
     library_dir=os.path.join(out_dir,library_name)
@@ -95,7 +93,7 @@ def generate() :
 
     if in_singularity() :
         # move to /working_dir
-        new_working_dir=f'/working_dir/{library_name}'
+        new_working_dir=f'/working/{library_name}'
         shutil.copytree('/madgraph/',new_working_dir)
         os.chdir(new_working_dir)
     # done with movement
