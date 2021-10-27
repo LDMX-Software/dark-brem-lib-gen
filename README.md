@@ -1,15 +1,20 @@
 
-# Dark Brem Event Generation using MadGraph and Docker
+# Dark Brem Event Generation
+This repository stores the build context for a container image which holds a specific instance of MadGraph
+designed to generate dark bremsstrahlung events over a range of incident lepton energies. Specifically,
+the output of running this container is a "library" of dark brem events which can be used within
+[LDMX's simulation infrastructure](https://github.com/LDMX-Software/SimCore).
 
 ## Quick Start
 If you aren't developing the container and just wish to use it,
 you do not need to clone this entire repository. You can simply download
-the environment script and start using it.
+the environment script and start running it.
 
 ```
 wget https://raw.githubusercontent.com/tomeichlersmith/dark-brem-lib-gen/main/env.sh
 source env.sh
 dbgen use v4.0 # choose version, must be version 4 or newer (older versions used different interface)
+dbgen cache /big/cache/dir # choose location for caching image layers
 dbgen dest /my/destination # choose output location (default is PWD)
 dbgen work /scratch/dir # big (>1GB) scratch directory (default is /tmp)
 dbgen run --help # print out runtime options
