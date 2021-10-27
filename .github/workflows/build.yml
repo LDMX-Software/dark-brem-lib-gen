@@ -92,6 +92,7 @@ jobs:
         source env.sh
         dbgen use ${{ steps.generate_tag.outputs.main_tag }}
         dbgen run
+      shell: bash
     -
       name: Push Build to DockerHub
       run: _csv_list=${{ steps.generate_tag.outputs.push_tags }}; for tag in ${_csv_list//,/ }; do docker push $tag; done
