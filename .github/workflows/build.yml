@@ -73,7 +73,7 @@ jobs:
           fi
           echo "Generated Tags: ${_push_tags}"
           echo ::set-output name=push_tags::${_push_tags}
-          echo ::set-output name=main_tag::${_main_tag}
+          echo ::set-output name=main_tag::${_tag}
     -
       name: Build the Image
       id: docker_build
@@ -88,7 +88,10 @@ jobs:
         tags: ${{ steps.generate_tag.outputs.push_tags }}
     -
       name: Test the Build
-      run: docker run --rm -v $(pwd):$(pwd) ${{ steps.generate_tag.outputs.main_tag }} --out_dir Events/
+      run: |
+        source env.sh
+        dbgen use ${{ steps.generate_tag.outputs.main_tag }}
+        dbgen run
     -
       name: Push Build to DockerHub
       run: _csv_list=${{ steps.generate_tag.outputs.push_tags }}; for tag in ${_csv_list//,/ }; do docker push $tag; done
