@@ -45,7 +45,7 @@ def write(fp, **kwargs) :
         f.write(t)
 
 def generate() :
-    parser = argparse.ArgumentParser('python3 db-lib-gen.py',
+    parser = argparse.ArgumentParser('dbgen run',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     parser.add_argument('--pack',default=False,action='store_true',

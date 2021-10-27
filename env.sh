@@ -607,8 +607,7 @@ __dbgen_complete() {
         __dbgen_dont_complete
         ;;
       run)
-        # TODO make better
-        __dbgen_dont_complete
+        COMPREPLY=($(compgen -W "-h --help --pack --run --nevents --max_energy --min_energy --rel_step --max_recoil --apmass --target --lepton" "$curr_word"))
         ;;
       *)
         # everything else has bash default (filenames)
