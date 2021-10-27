@@ -15,7 +15,7 @@ dbgen work /scratch/dir # big (>1GB) scratch directory (default is /tmp)
 dbgen run --help # print out runtime options
 ```
 
-### context
+## context
 
 <a href="https://github.com/tomeichlersmith/mg-dark-brem/actions" alt="Actions">
     <img src="https://github.com/tomeichlersmith/mg-dark-brem/workflows/Build/badge.svg" />
@@ -34,7 +34,7 @@ Currently, the MadGraph event generation can handle the following variables.
 
 The corresponding DockerHub repository for this image is [tomeichlersmith/dark-brem-lib-gen](https://hub.docker.com/repository/docker/tomeichlersmith/dark-brem-lib-gen).
 
-### env.sh
+## env.sh
 This is a bash script that sets up a helpful working environment for using the container built using the above context.
 It defines a helpful wrapper for using the image built with this context in singularity or docker.
 
