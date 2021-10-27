@@ -332,7 +332,7 @@ __dbgen_work() {
   return 0
 }
 # get the mount string for the working directory
-__dbgen_dest_mount() {
+__dbgen_work_mount() {
   echo "${DBGEN_WORK:-/tmp/}:/working"
 }
 

@@ -9,6 +9,10 @@ the environment script and start using it.
 ```
 wget https://raw.githubusercontent.com/tomeichlersmith/dark-brem-lib-gen/main/env.sh
 source env.sh
+dbgen use v4.0 # choose version
+dbgen dest /my/destination # choose output location (default is PWD)
+dbgen work /scratch/dir # big (>1GB) scratch directory (default is /tmp)
+dbgen run --help # print out runtime options
 ```
 
 ### context
@@ -32,6 +36,5 @@ The corresponding DockerHub repository for this image is [tomeichlersmith/dark-b
 
 ### env.sh
 This is a bash script that sets up a helpful working environment for using the container built using the above context.
-It defines the following functions for systems with either docker or singularity installed.
+It defines a helpful wrapper for using the image built with this context in singularity or docker.
 
-- `db-lib-gen` : Alias for the complicated container-running command. Use `db-lib-gen --help` to see the full option detail.
