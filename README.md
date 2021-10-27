@@ -9,7 +9,7 @@ the environment script and start using it.
 ```
 wget https://raw.githubusercontent.com/tomeichlersmith/dark-brem-lib-gen/main/env.sh
 source env.sh
-dbgen use v4.0 # choose version
+dbgen use v4.0 # choose version, must be version 4 or newer (older versions used different interface)
 dbgen dest /my/destination # choose output location (default is PWD)
 dbgen work /scratch/dir # big (>1GB) scratch directory (default is /tmp)
 dbgen run --help # print out runtime options
