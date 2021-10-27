@@ -518,6 +518,16 @@ dbgen() {
 ####################################################################################################
 
 ####################################################################################################
+# __dbgen_complete_run
+#   Here is where we copy the options from the container entrypoint script
+#   so that the user can tab-complete them.
+####################################################################################################
+__dbgen_complete_run() {
+  COMPREPLY=($(compgen -W "-h --help --pack --run --nevents --max_energy --min_energy --rel_step --max_recoil --apmass --target --lepton" -- "$curr_word"))
+}
+
+
+####################################################################################################
 # __dbgen_complete_directory
 #   Some of our sub-commands take a directory as input.
 #   In these cases, we can pretend to cd and use bash's internal
@@ -592,6 +602,9 @@ __dbgen_complete() {
         #directories only after these commands
         __dbgen_complete_directory
         ;;
+      run)
+        __dbgen_complete_run
+        ;;
       *)
         # files like normal tab complete after everything else
         __dbgen_complete_bash_default
@@ -607,7 +620,7 @@ __dbgen_complete() {
         __dbgen_dont_complete
         ;;
       run)
-        COMPREPLY=($(compgen -W "-h --help --pack --run --nevents --max_energy --min_energy --rel_step --max_recoil --apmass --target --lepton" "$curr_word"))
+        __dbgen_complete_run
         ;;
       *)
         # everything else has bash default (filenames)
