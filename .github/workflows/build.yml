@@ -15,8 +15,10 @@ on:
 
 # workflow consists of one building and testing job
 jobs:
-  build-test:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      main_tag: ${{steps.generate_tag.outputs.main_tag}}
     defaults:
       run:
         shell: bash
@@ -82,19 +84,51 @@ jobs:
       with:
         context: context
         file: context/Dockerfile
-        push: false # don't push to docker hub yet
-        load: true # allow image to be availabe to the docker program later in this job
+        push: true # don't push to docker hub yet
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: ${{ steps.generate_tag.outputs.push_tags }}
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - 
+      name: Get Env Script
+      uses: actions/checkout@v2
     -
       name: Test the Build
       run: |
         source env.sh
+        dbgen config
         dbgen use ${{ steps.generate_tag.outputs.main_tag }}
         dbgen run
-      shell: bash
-    -
-      name: Push Build to DockerHub
-      run: _csv_list=${{ steps.generate_tag.outputs.push_tags }}; for tag in ${_csv_list//,/ }; do docker push $tag; done
-      if: ${{ github.event_name != 'pull_request' }}
+
+  singularity:
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        version: [3.8.3]
+    steps:
+    - 
+      name: Get Env Script
+      uses: actions/checkout@v2
+   - 
+      uses: eWaterCycle/setup-singularity@v7
+      with:
+        singularity-version: ${{matrix.version}}
+   - 
+      name: Print Version
+      run: singularity --version
+   - 
+      name: Env Config
+      run: |
+          source env.sh
+          dbgen config
