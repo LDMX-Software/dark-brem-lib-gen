@@ -113,9 +113,9 @@ def generate() :
             nevents = arg.nevents,
             run = arg.run,
             lepton_energy = energy,
-            lepton_mass = lepton_options[arg.lepton]['mass'],
+            lepton_mass = lepton['mass'],
             max_recoil_energy = arg.max_recoil,
-            target_mass = target_options[arg.target]['mass'])
+            target_mass = target['mass'])
 
         prefix = f'{library_name}_IncidentEnergy_{energy}'
 
