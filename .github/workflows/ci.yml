@@ -135,6 +135,6 @@ jobs:
         echo "Singularity: ${_singularity}"
         [[ ${_singularity} != "noop" ]] && export DBGEN_FORCE_SINGULARITY="true"
         source env.sh
-        dbgen config
         dbgen use ${{ needs.build.outputs.test_tag }}
+        dbgen config
         dbgen run --nevents 10
