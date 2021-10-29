@@ -99,7 +99,7 @@ jobs:
         tags: ${{ steps.generate_tag.outputs.push_tags }}
     -
       name: Just Re-Tag an Already Built Image
-      if: ${{!contains(steps.generate_tag.outputs.retag,'noop')}}
+      if: ${{steps.generate_tag.outputs.retag != 'noop'}}
       run: |
         _retag=${DOCKER_REPO}:${{steps.generate_tag.outputs.retag}}
         _newtags=${{steps.generate_tag.outputs.push_tags}}
@@ -110,8 +110,8 @@ jobs:
         done
 
   test:
-    if: ${{github.event_name == 'push'}}
     needs: build
+    if: ${{needs.build.outputs.test_tag != 'noop'}}
     runs-on: ubuntu-latest
     defaults:
       run:
