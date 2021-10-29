@@ -55,6 +55,7 @@ fi
 #   All container-runners need to implement the following commands
 #     - __dbgen_container_clean : remove all containers and images on this machine
 #     - __dbgen_container_config : print configuration of container
+#     - __dbgen_pull : pull down the provided tag
 #     - __dbgen_run : give all arguments to container's entrypoint script
 #         - mounts DBGEN_WORK (or /tmp/) to /working
 #         - mounts DBGEN_DEST (or $(pwd)) to /output
@@ -75,21 +76,6 @@ __dbgen_run_help() {
 HELP
 }
 
-__dbgen_cache_help() {
-  cat <<\HELP
-  USAGE:
-    dbgen cache <dir>
-
-    Change the directory in which layers of images are cached for later use.
-
-    This feature is only available on systems using singularity.
-
-  EXAMPLES:
-    Perhaps my home directory is too small and so I need to use a large scratch directory.
-      dbgen cache /scratch/
-HELP
-}
-
 # prefer docker, so we do that first
 if hash docker &> /dev/null; then
   # Print container configuration
@@ -107,6 +93,36 @@ if hash docker &> /dev/null; then
     docker image prune -a -f  || return $?
   }
 
+  __dbgen_pull_help() {
+    cat <<\HELP
+  USAGE:
+    dbgen pull <image-tag>
+
+    Download the provided image tag into our local cache.
+    This overwrites the images already existing in the local cache.
+    We *do not* change the run command to use the newly downloaded
+    container.
+
+  EXAMPLES:
+    Update the 'latest' image to the one that was just uploaded.
+      dbgen pull latest
+
+    Try out an unverified 'edge' image.
+      dbgen pull edge
+      dbgen use edge
+
+HELP
+  }
+  __dbgen_pull() {
+    local _image="$1"
+    if [[ -z ${_image} ]]; then
+      echo "ERROR: An image tag needs to be provided."
+      return 1
+    fi
+    docker pull ${DBGEN_IMAGE_REPO}:${_image}
+    return $?
+  }
+
   # Run the container
   __dbgen_run() {
     local _interactive=""
@@ -119,6 +135,16 @@ if hash docker &> /dev/null; then
     return $?
   }
 
+  __dbgen_cache_help() {
+    cat <<\HELP
+  USAGE:
+    dbgen cache <dir>
+
+    Changing the cache directory for container layers is not
+    implemented for docker runners.
+
+HELP
+  }
   __dbgen_cache() {
     # Changing the image cache directory is only supported in singularity
     return 0
@@ -141,6 +167,45 @@ elif hash singularity &> /dev/null; then
     [[ ! -z ${SINGULARITY_CACHEDIR} ]] && rm -r $SINGULARITY_CACHEDIR || return $?
   }
 
+  __dbgen_pull_help() {
+    cat <<\HELP
+  USAGE:
+    dbgen pull <image-tag> [<file-name>]
+
+    Download the provided image tag into our local cache.
+    This overwrites the images already existing in the local cache.
+    We *do not* change the run command to use the newly downloaded
+    container.
+
+    The (optional) file name can be provided if the user wishes
+    the image to be built into a single Singularity Image File (SIF).
+
+  EXAMPLES:
+    Update the 'latest' image to the one that was just uploaded.
+      dbgen pull latest
+
+    Try out an unverified 'edge' image.
+      dbgen pull edge
+      dbgen use edge
+
+    Prepare v4.0 of the image to be used in a batch run.
+      dbgen pull v4.0 ldmx_dark_brem_library_gen_v4.0.sif
+
+HELP
+  }
+  __dbgen_pull() {
+    local _image="$1"
+    if [[ -z ${_image} ]]; then
+      echo "ERROR: An image tag needs to be provided."
+      return 1
+    fi
+    local _sif="$2"
+    # singularity will handle an empty file name correctly
+    #   by just downloading the layers into the local cache
+    singularity pull --force ${_sif} docker://${DBGEN_IMAGE_REPO}:${_image}
+    return $?
+  }
+
   # Run the container
   __dbgen_run() {
     singularity run --no-home --cleanenv \
@@ -149,6 +214,21 @@ elif hash singularity &> /dev/null; then
     return $?
   }
 
+
+  __dbgen_cache_help() {
+    cat <<\HELP
+  USAGE:
+    dbgen cache <dir>
+
+    Change the directory in which layers of images are cached for later use.
+    The default cache directory (decided by singularity) is ~/.singularity.
+
+  EXAMPLES:
+    Perhaps my home directory is too small and so I need to use a large scratch directory.
+      dbgen cache /scratch/
+
+HELP
+  }
   __dbgen_cache() {
     if [[ -d "$1" ]]; then
       export SINGULARITY_CACHEDIR="$(cd "$1" && pwd -P)"
@@ -179,6 +259,7 @@ __dbgen_list_help() {
       dbgen list
     Only look at the tags that are a version
       dbgen list "v*"
+
 HELP
 }
 __dbgen_list() {
@@ -215,35 +296,24 @@ __dbgen_config() {
 }
 
 ####################################################################################################
-# __dbgen_is_mounted
-#   Check if the input directory will be accessible by the container
-####################################################################################################
-__dbgen_is_mounted() {
-  local full=$(cd "$1" && pwd -P)
-  for _already_mounted in ${DBGEN_CONTAINER_MOUNTS[@]}; do
-    if [[ $full/ = $_already_mounted/* ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
-
-####################################################################################################
 # __dbgen_use
 #  Define which image to use when launching container
 ####################################################################################################
 __dbgen_use_help() {
   cat<<\HELP
   USAGE:
-    dbgen use <image-tag>
+    dbgen use (<image-tag> | <sif>)
 
     <image-tag> is the short-tag in the container image tag (the part after the colon).
+    <sif> is a singularity image file if you already have a file downloaded onto your system.
 
-    We do not check if the input tag is connected to an existing image.
+    We do not check if the input is a valid container image.
 
   EXAMPLES:
     dbgen use latest
     dbgen use v2.1
+    dbgen use my_special_container.sif
+
 HELP
 }
 export DBGEN_IMAGE_REPO="tomeichlersmith/dark-brem-lib-gen"
@@ -270,14 +340,17 @@ __dbgen_dest_help() {
 
     <directory> will be mounted to the container when it is run and it will
     be used as the root directory to output the event library generated by the dark brem
-    program. By default, the output directory is the directory from which the program is run.
+    program. By default, the output directory is the directory from which 'dbgen run'
+    is executed (i.e. the present working directory).
 
-    The library is only copied to the destination directory after it is fully completed.
+    The library is only copied to the destination directory *after* it is fully completed.
+    This means the destination directory can be a linear-write-limited mount (like HDFS).
 
     An error is thrown if the input is not a directory.
 
   EXAMPLES:
     dbgen dest /my/data/dir
+
 HELP
 }
 unset DBGEN_DEST
@@ -316,7 +389,8 @@ __dbgen_work_help() {
     An error is thrown if the input is not a directory.
 
   EXAMPLES:
-    dbgen dest /big/scratch/dir/
+    dbgen work /big/scratch/dir/
+
 HELP
 }
 unset DBGEN_WORK
@@ -346,9 +420,10 @@ __dbgen_clean_help() {
   USAGE:
     dbgen clean (env | container | all)
 
-    env       - unset the dbgen-env bash variables
+    env       - unset the dbgen bash variables
     container - remove all containers and images from storage on this computer
     all       - do both 
+
 HELP
 }
 __dbgen_clean() {
@@ -400,6 +475,7 @@ __dbgen_source_help() {
     exists.
 
       dbgen source $HOME/.dbgenrc
+
 HELP
 }
 __dbgen_source() {
@@ -426,13 +502,7 @@ __dbgen_help() {
   USAGE: 
     dbgen <command> [<argument> ...]
 
-    <command> can either be an EXTERNAL command defined in the dbgen-env.sh script
-    or a command that is defined within the container.
-
-    The list of internal commands changes depending on what softwares are installed within
-    the container image. Command internal commands are python, cmake, make, root, and rootbrowse.
-
-  EXTERNAL COMMANDS:
+  COMMANDS:
     help    : Print this help message and exit
     config  : Print the current configuration of the container
     list    : List the tag options
@@ -447,13 +517,14 @@ __dbgen_help() {
       dbgen use latest
       dbgen dest /my/output/directory/
       dbgen work /big/scratch/dir/
-      dbgen run --aprime 1.0
+      dbgen run --apmass 1.0
 
     dbgen help
     dbgen list 
     dbgen clean container
     dbgen config
     dbgen use v3.0
+
 HELP
   return 0
 }
@@ -491,7 +562,7 @@ dbgen() {
       return $?
       ;;
     # any number of arguments
-    list|run)
+    list|run|pull)
       if [[ "$2" == "help" ]]; then
         __dbgen_${1}_help
         return 0
@@ -585,7 +656,7 @@ __dbgen_complete() {
 
   if [[ "$COMP_CWORD" = "1" ]]; then
     # tab completing a main argument
-    COMPREPLY=($(compgen -W "help list clean config cache use run source dest work" "$curr_word"))
+    COMPREPLY=($(compgen -W "help list clean config cache use pull run source dest work" "$curr_word"))
   elif [[ "$COMP_CWORD" = "2" ]]; then
     # tab complete a sub-argument,
     #   depends on the main argument
