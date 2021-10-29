@@ -63,17 +63,8 @@ fi
 ####################################################################################################
 
 __dbgen_run_help() {
-  cat<<\HELP
-  USAGE:
-    dbgen run [<args>]
-
-    We launch the container, mounting all of the directories stored in the DBGEN_CONTAINER_MOUNTS
-    array, and then execute the event library generation with its (optional) arguments <args>.
-
-  EXAMPLES:
-    Test run the container with all default arguments.
-      dbgen run
-HELP
+  # pass the help flag to the entrypoint script in the container
+  dbgen run --help
 }
 
 # prefer docker, so we do that first
