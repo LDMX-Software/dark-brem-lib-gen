@@ -137,4 +137,4 @@ jobs:
         source env.sh
         dbgen config
         dbgen use ${{ needs.build.outputs.test_tag }}
-        dbgen run
+        dbgen run --nevents 10
