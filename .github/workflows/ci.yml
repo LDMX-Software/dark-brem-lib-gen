@@ -6,7 +6,7 @@ on:
     paths:
       - 'context/**'
       - 'env.sh'
-      - '.github/workflows/build.yml'
+      - '.github/workflows/ci.yml'
     branches:
       - '**'
     tags:
