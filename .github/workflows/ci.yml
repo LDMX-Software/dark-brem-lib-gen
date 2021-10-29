@@ -1,5 +1,5 @@
 
-name: Build
+name: CI
 
 on:
   push:
@@ -11,7 +11,9 @@ on:
       - '**'
     tags:
       - 'v*.*'
-  pull_request:
+
+env:
+  DOCKER_REPO: tomeichlersmith/dark-brem-lib-gen
 
 # workflow consists of one building and testing job
 jobs:
@@ -49,11 +51,15 @@ jobs:
       name: Determine Image Tags
       id: generate_tag
       run: |
-          _repo=tomeichlersmith/dark-brem-lib-gen
-          _tag=edge
+          _tag=noop
+          _retag=noop
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             # if pushing a git tag ==> get the git tag for the docker tag
             _tag=${GITHUB_REF#refs/tags/}
+            echo "Checking for already built commit ${GITHUB_SHA::8}"
+            if wget -q https://registry.hub.docker.com/v1/repositories/${DOCKER_REPO}/tags -O - | grep -q ${GITHUB_SHA::8}; then
+              _retag=sha-${GITHUB_SHA::8}
+            fi
           elif [[ $GITHUB_REF == refs/heads/* ]]; then
             # pushing to a branch ==> docker tag is branch name
             #   if branch name is default_branch, docker tag is 'edge'
@@ -65,21 +71,21 @@ jobs:
             # pull request branch ==> docker tag is pr number
             _tag=pr-${{ github.event.number }}
           fi
-          _main_tag="${_repo}:${_tag}"
-          _push_tags="${_main_tag}"
+          _push_tags="${DOCKER_REPO}:${_tag}"
           if [[ $_tag =~ ^v[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
             # latest docker tag is latest version built matching the format v<1-3 digis>.<1-3 digis>
-            _push_tags="$_push_tags,${_repo}:latest"
+            _push_tags="$_push_tags,${DOCKER_REPO}:latest"
           elif [ "${{ github.event_name }}" = "push" ]; then
             # on push actions, tag with sha of GITHUB as well
-            _push_tags="$_push_tags,${_repo}:sha-${GITHUB_SHA::8}"
+            _push_tags="$_push_tags,${DOCKER_REPO}:sha-${GITHUB_SHA::8}"
           fi
           echo "Generated Tags: ${_push_tags}"
+          echo "Re-Tag: ${_retag}"
           echo ::set-output name=push_tags::${_push_tags}
-          echo ::set-output name=main_tag::${_tag}
+          echo ::set-output name=retag::${_retag}
     -
       name: Build the Image
-      id: docker_build
+      if: ${{contains(steps.generate_tag.outputs.retag,'noop')}}
       uses: docker/build-push-action@v2
       with:
         context: context
@@ -88,26 +94,20 @@ jobs:
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: ${{ steps.generate_tag.outputs.push_tags }}
-
-  docker:
-    needs: build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-    - 
-      name: Get Env Script
-      uses: actions/checkout@v2
     -
-      name: Test the Build
+      name: Just Re-Tag an Already Built Image
+      if: ${{!contains(steps.generate_tag.outputs.retag,'noop')}}
       run: |
-        source env.sh
-        dbgen config
-        dbgen use ${{ needs.build.outputs.main_tag }}
-        dbgen run
+        _retag=${DOCKER_REPO}:${{steps.generate_tag.outputs.retag}}
+        _newtags=${{steps.generate_tag.outputs.push_tags}}
+        docker pull ${_retag}
+        for t in ${_newtags//,/ }; do
+          docker tag ${_retag} ${t}
+          docker push ${t}
+        done
 
-  singularity:
+  test:
+    if: ${{github.event_name == 'push'}}
     needs: build
     runs-on: ubuntu-latest
     defaults:
@@ -115,21 +115,26 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        version: [3.8.3]
+        singularity: [3.8.3, 3.5.2]
+        include:
+          - docker: true
+            singularity: noop
     steps:
     - 
       name: Get Env Script
       uses: actions/checkout@v2
     - 
       uses: eWaterCycle/setup-singularity@v7
+      if: ${{! matrix.docker }}
       with:
-        singularity-version: ${{matrix.version}}
-    - 
-      name: Print Version
-      run: singularity --version
-    - 
-      name: Env Config
+        singularity-version: ${{matrix.singularity}}
+    -
+      name: Test the Build
       run: |
-        export DBGEN_FORCE_SINGULARITY="true"
+        _use_docker=${{matrix.docker}}
+        echo "Using Docker: ${_use_docker}"
+        [[ -z ${_use_docker} ]] && export DBGEN_FORCE_SINGULARITY="true"
         source env.sh
         dbgen config
+        dbgen use ${{ needs.build.outputs.main_tag }}
+        dbgen run

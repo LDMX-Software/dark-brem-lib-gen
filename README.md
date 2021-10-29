@@ -23,7 +23,7 @@ dbgen run --help # print out runtime options
 ## context
 
 <a href="https://github.com/tomeichlersmith/mg-dark-brem/actions" alt="Actions">
-    <img src="https://github.com/tomeichlersmith/mg-dark-brem/workflows/Build/badge.svg" />
+    <img src="https://github.com/tomeichlersmith/dark-brem-lib-gen/workflows/CI/badge.svg" />
 </a>
 
 This directory contains the actual build context for a docker image that can run the necessary [MadGraph](https://cp3.irmp.ucl.ac.be/projects/madgraph/) event generation script.
