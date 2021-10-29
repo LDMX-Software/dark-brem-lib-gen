@@ -20,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      main_tag: ${{steps.generate_tag.outputs.main_tag}}
+      test_tag: ${{steps.generate_tag.outputs.test_tag}}
     defaults:
       run:
         shell: bash
@@ -53,6 +53,7 @@ jobs:
       run: |
           _tag=noop
           _retag=noop
+          _test_tag=noop
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             # if pushing a git tag ==> get the git tag for the docker tag
             _tag=${GITHUB_REF#refs/tags/}
@@ -78,11 +79,13 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             # on push actions, tag with sha of GITHUB as well
             _push_tags="$_push_tags,${DOCKER_REPO}:sha-${GITHUB_SHA::8}"
+            _test_tag="sha-${GITHUB_SHA::8}" 
           fi
           echo "Generated Tags: ${_push_tags}"
           echo "Re-Tag: ${_retag}"
           echo ::set-output name=push_tags::${_push_tags}
           echo ::set-output name=retag::${_retag}
+          echo ::set-output name=test_tag::${_test_tag}
     -
       name: Build the Image
       if: ${{contains(steps.generate_tag.outputs.retag,'noop')}}
@@ -115,26 +118,23 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        singularity: [3.8.3, 3.5.2]
-        include:
-          - docker: true
-            singularity: noop
+        singularity: [noop, 3.8.3, 3.7.1]
     steps:
     - 
       name: Get Env Script
       uses: actions/checkout@v2
     - 
       uses: eWaterCycle/setup-singularity@v7
-      if: ${{! matrix.docker }}
+      if: ${{!contians(matrix.singularity,'noop')}}
       with:
         singularity-version: ${{matrix.singularity}}
     -
       name: Test the Build
       run: |
-        _use_docker=${{matrix.docker}}
-        echo "Using Docker: ${_use_docker}"
-        [[ -z ${_use_docker} ]] && export DBGEN_FORCE_SINGULARITY="true"
+        _singularity=${{matrix.singularity}}
+        echo "Singularity: ${_singularity}"
+        [[ ${_singularity} != "noop" ]] && export DBGEN_FORCE_SINGULARITY="true"
         source env.sh
         dbgen config
-        dbgen use ${{ needs.build.outputs.main_tag }}
+        dbgen use ${{ needs.build.outputs.test_tag }}
         dbgen run
