@@ -158,7 +158,8 @@ elif hash singularity &> /dev/null; then
   # Print container configuration
   __dbgen_container_config() {
     echo "Singularity Version: $(singularity --version)"
-    echo "Singularity Image: $(__dbgen_singularity_image)"
+    echo "Singularity Run Image: $(__dbgen_singularity_image)"
+    echo "Singularity Cache: ${SINGULARITY_CACHEDIR:-$HOME/.singularity}"
     return 0
   }
 
@@ -213,7 +214,6 @@ HELP
       $(__dbgen_singularity_image) "$@"
     return $?
   }
-
 
   __dbgen_cache_help() {
     cat <<\HELP
@@ -471,8 +471,8 @@ __dbgen_source_help() {
     this command does not guartantee a location from which the commands in <file> are run.
 
   EXAMPLES:
-    The dbgen-env.sh script uses this function to setup a default environment if the file $HOME/.dbgenrc
-    exists.
+    The dbgen-env.sh script uses this function to setup a default environment 
+    if the file $HOME/.dbgenrc exists.
 
       dbgen source $HOME/.dbgenrc
 
@@ -539,26 +539,25 @@ HELP
 #   about them.
 ####################################################################################################
 dbgen() {
-  # divide commands by outside/inside container and separate by number of arguments
+  # separate subcommands by number of arguments
   case $1 in
     # zero arguments
     help|config)
       __dbgen_$1
       return 0
       ;;
-    # one argument
+    # exactly one argument
     clean|dest|work|source|use|cache)
       if [[ $# -ne 2 ]]; then
         __dbgen_${1}_help
-        echo "ERROR: dbgen ${1} requires one argument."
+        echo "ERROR: dbgen ${1} requires exactly one argument."
         return 1
       elif [[ "$2" == "help" ]]; then
         # subcommand help
         __dbgen_${1}_help
         return 0
       fi
-      # outside container
-      __dbgen_$1 ${@:2}
+      __dbgen_$1 $2
       return $?
       ;;
     # any number of arguments
