@@ -75,8 +75,8 @@ if [[ -z ${DBGEN_FORCE_SINGULARITY} ]] && hash docker &> /dev/null; then
   #   SHA retrieval taken from https://stackoverflow.com/a/33511811
   __dbgen_container_config() {
     echo "Docker Version: $(docker --version)"
-    echo "Docker Tag: ${DBGEN_IMAGE_TAG}"
-    echo "  SHA: $(docker inspect --format='{{index .RepoDigests 0}}' ${DBGEN_IMAGE_TAG})"
+    echo "Docker Tag: ${DBGEN_IMAGE_REPO}:${DBGEN_IMAGE_TAG}"
+    echo "  SHA: $(docker inspect --format='{{index .RepoDigests 0}}' ${DBGEN_IMAGE_REPO}:${DBGEN_IMAGE_TAG})"
     return 0
   }
 
