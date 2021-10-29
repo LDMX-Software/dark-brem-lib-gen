@@ -104,7 +104,7 @@ jobs:
       run: |
         source env.sh
         dbgen config
-        dbgen use ${{ steps.generate_tag.outputs.main_tag }}
+        dbgen use ${{ needs.build.outputs.main_tag }}
         dbgen run
 
   singularity:
@@ -130,5 +130,6 @@ jobs:
     - 
       name: Env Config
       run: |
-          source env.sh
-          dbgen config
+        export DBGEN_FORCE_SINGULARITY="true"
+        source env.sh
+        dbgen config

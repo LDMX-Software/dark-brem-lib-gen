@@ -77,7 +77,9 @@ HELP
 }
 
 # prefer docker, so we do that first
-if hash docker &> /dev/null; then
+#   allow user to force use of singularity by defining DBGEN_FORCE_SINGULARITY
+#   environment variable before sourcing this script
+if [[ -z ${DBGEN_FORCE_SINGULARITY} ]] && hash docker &> /dev/null; then
   # Print container configuration
   #   SHA retrieval taken from https://stackoverflow.com/a/33511811
   __dbgen_container_config() {
