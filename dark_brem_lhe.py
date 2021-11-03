@@ -24,6 +24,25 @@ LHEParticle
 """
 
 import pylhe
+import numpy
+
+class ColumnList :
+    """Wrapper around a list of objects
+    so we can grab lists of those member variables.
+
+    We assume that the member variable requested from
+    each of the objects is a low-level number (e.g. float)
+    so that we can wrap the values in a numpy array.
+    """
+    def __init__(self, l) :
+        self.__list = l
+
+    def __getattr__(self, name) :
+        """Called after everything else,
+        we assume we are trying to get all entries for a specific
+        attribute of the particles in this list."""
+
+        return numpy.array([getattr(o,name) for o in self.__list])
 
 class DarkBremEvent :
     """A Dark Brem event parsed from the LHE file
@@ -43,6 +62,8 @@ class DarkBremEvent :
         The recoiling lepton
         Particle ID is 11 or 13 and status is positive
     """
+
+    fieldnames = ['recoil_lepton','dark_photon','incident_lepton']
 
     def __init__(self, lhe_event) :
         for particle in lhe_event.particles :
@@ -64,3 +85,36 @@ def read_dark_brem_lhe(lhe_file) :
 
     for lhe_event in pylhe.readLHE(lhe_file) :
         yield DarkBremEvent(lhe_event)
+
+class DarkBremFile :
+    """In-memory storage of dark brem event kinematics for the input file
+
+    After reading in some initialization parameters,
+    we read in **all** of the events in the file.
+    When a getattr call is made and all other options are exhausted,
+    we assume we want an object from the list of events.
+    
+    Attributes
+    ----------
+    lepton : int
+        11 (electron) or 13 (muon), pdg of lepton
+    incident_energy : float
+        Incident energy of lepton [GeV]
+    recoil_lepton : pylhe.LHEParticle
+        The outgoing lepton
+    dark_photon : pylhe.LHEParticle
+        The outgoing dark photon
+    """
+
+    def __init__(self, lhe_file) :
+        self.full_init_info = pylhe.readLHEInit(lhe_file)
+        self.lepton = int(self.full_init_info['initInfo']['beamA'])
+        self.incident_energy = self.full_init_info['initInfo']['energyA']
+        self.events = [e for e in read_dark_brem_lhe(lhe_file)]
+
+    def __getattr__(self, name) :
+        """Called after all other attempts, so we assume that we are getting
+        some column of objects from the events
+        """
+
+        return ColumnList([getattr(e, name) for e in self.events])

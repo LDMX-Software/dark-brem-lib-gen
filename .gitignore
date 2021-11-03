@@ -5,3 +5,5 @@ log/**
 libs/**
 .singularity/**
 *.sif
+*.lhe
+.ipynb_checkpoints/**
