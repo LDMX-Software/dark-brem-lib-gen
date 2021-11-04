@@ -16,8 +16,14 @@ for f in files :
         f.events.dark_photon.e / f.incident_energy,
         bins = 200,
         range = (0.,1.),
-        histtype = 'step'
+        histtype = 'step',
+        label = 'Electrons', #f'{f.incident_energy} GeV Leptons',
+        log = True
         )
+mpl.ylabel('Events')
+mpl.yscale('log')
+mpl.xlabel('Dark Photon Energy Fraction')
+mpl.legend()
 mpl.savefig('dark_photon_energy.pdf')
 mpl.clf()
 
@@ -26,7 +32,13 @@ for f in files :
         f.events.recoil_lepton.e / f.incident_energy,
         bins = 200,
         range = (0.,1.),
-        histtype = 'step'
+        histtype = 'step',
+        label = f'{f.incident_energy} GeV Leptons',
+        log = True
         )
+mpl.ylabel('Events')
+mpl.yscale('log')
+mpl.xlabel('Recoil Lepton Energy Fraction')
+mpl.legend()
 mpl.savefig('recoil_lepton_energy.pdf')
 mpl.clf()

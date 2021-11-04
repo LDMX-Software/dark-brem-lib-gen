@@ -25,8 +25,9 @@ LHEParticle
 
 import pylhe
 import numpy
+import os
 
-class ColumnList :
+class ColumnList(list) :
     """Wrapper around a list of objects
     so we can grab lists of those member variables.
 
@@ -34,13 +35,11 @@ class ColumnList :
     each of the objects is a low-level number (e.g. float)
     so that we can wrap the values in a numpy array.
     """
-    def __init__(self, l) :
-        self.__list = l
 
     def __getattr__(self, name) :
         """Called after everything else,
         we assume we are trying to get all entries for a specific
-        attribute of the particles in this list.
+        attribute of the entries in this list.
 
         Fundamental types don't have the '__dict__' attribute,
         so if the list is empty or the first entry has the '__dict__'
@@ -48,11 +47,18 @@ class ColumnList :
         Otherwise, we return a numpy.array of the requested attribute
         (i.e. assuming that it is the last request).
         """
-        raw_list = [getattr(o,name) for o in self.__list]
-        if len(raw_list) == 0 or hasattr(raw_list[0],'__dict__') :
+        raw_list = [getattr(o,name) for o in self]
+
+        if len(raw_list) == 0 :
+            return raw_list
+
+        if isinstance(raw_list[0], ColumnList) :
+            return ColumnList([item for sublist in raw_list for item in sublist])
+
+        if hasattr(raw_list[0],'__dict__') :
             return ColumnList(raw_list)
-        else :
-            return numpy.array(raw_list)
+
+        return numpy.array(raw_list)
 
 class DarkBremEvent :
     """A Dark Brem event parsed from the LHE file
@@ -94,7 +100,7 @@ def read_dark_brem_lhe(lhe_file) :
     for lhe_event in pylhe.readLHE(lhe_file) :
         yield DarkBremEvent(lhe_event)
 
-class DarkBremFile :
+class DarkBremEventFile :
     """In-memory storage of dark brem event kinematics for the input file
 
     After reading in some initialization parameters,
@@ -125,5 +131,51 @@ class DarkBremFile :
         self.incident_energy = self.full_init_info['initInfo']['energyA']
         self.target = int(self.full_init_info['initInfo']['beamB'])
         self.target_mass = self.full_init_info['initInfo']['energyB']
-        self.events = ColumnList([e for e in read_dark_brem_lhe(lhe_file)])
+        self.events = ColumnList(read_dark_brem_lhe(lhe_file))
 
+    def __repr__(self) :
+        return f'DarkBremEventFile(lepton=[{self.lepton},{self.incident_energy}GeV],target=[{self.target},{self.target_mass}GeV])'
+
+class DarkBremEventLibrary :
+    """In-memory storage of dark brem event kinematics for an event library
+
+    We basically hold all of the DarkBremEventFiles in one place.
+
+    Attributes
+    ----------
+    lepton : int
+        11 (electron) or 13 (muon), pdg of lepton
+    incident_energy : float
+        Incident energy of lepton [GeV]
+    target : int
+        Integer ID for target nucleus (e.g. we've been using -623 for tungsten)
+        WARNING: This may not change if we are only changing the target mass for different target materials
+    target_mass : float
+        Mass of target nucleus [GeV]
+    files : ColumnList
+        List of DarkBremEventFiles in this library, wrapped with column list to make retrieval of data easier
+    """
+
+    def __init__(self, library_d) :
+        self.files = ColumnList([DarkBremEventFile(os.path.join(library_d,f)) for f in os.listdir(library_d) if f.endswith('lhe')])
+        if len(self.files) == 0 :
+            raise Exception(f'Passed library {library_d} does not have any LHE files in it.')
+
+        self.lepton = self.files[0].lepton
+        self.incident_energy = self.files[0].incident_energy
+        self.target = self.files[0].target
+        self.target_mass = self.files[0].target_mass
+
+        for dbf in self.files :
+            if (
+                self.lepton != dbf.lepton or 
+                self.target != dbf.target or 
+                self.target_mass != dbf.target_mass 
+               ) :
+                raise Exception('One of the LHE files in the passed library does not match configuration of the others.')
+
+        # sort by incident energy
+        self.files.sort(reverse = True, key = lambda f : f.incident_energy)
+
+    def __repr__(self) :
+        return f'DarkBremEventLibrary(lepton={self.lepton},target=[{self.target},{self.target_mass}GeV])'
