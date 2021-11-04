@@ -73,8 +73,6 @@ class DarkBremEvent :
         Particle ID is 11 or 13 and status is positive
     """
 
-    fieldnames = ['recoil_lepton','dark_photon','incident_lepton']
-
     def __init__(self, lhe_event) :
         for particle in lhe_event.particles :
             if particle.id == 622 :
@@ -101,8 +99,6 @@ class DarkBremFile :
 
     After reading in some initialization parameters,
     we read in **all** of the events in the file.
-    When a getattr call is made and all other options are exhausted,
-    we assume we want an object from the list of events.
     
     Attributes
     ----------
@@ -110,14 +106,24 @@ class DarkBremFile :
         11 (electron) or 13 (muon), pdg of lepton
     incident_energy : float
         Incident energy of lepton [GeV]
+    target : int
+        Integer ID for target nucleus (e.g. we've been using -623 for tungsten)
+        WARNING: This may not change if we are only changing the target mass for different target materials
+    target_mass : float
+        Mass of target nucleus [GeV]
     recoil_lepton : pylhe.LHEParticle
         The outgoing lepton
     dark_photon : pylhe.LHEParticle
         The outgoing dark photon
+    events : ColumnList
+        List of DarkBremEvents in this file, wrapped with column list to make retrieval of data easier
     """
 
     def __init__(self, lhe_file) :
         self.full_init_info = pylhe.readLHEInit(lhe_file)
         self.lepton = int(self.full_init_info['initInfo']['beamA'])
         self.incident_energy = self.full_init_info['initInfo']['energyA']
+        self.target = int(self.full_init_info['initInfo']['beamB'])
+        self.target_mass = self.full_init_info['initInfo']['energyB']
         self.events = ColumnList([e for e in read_dark_brem_lhe(lhe_file)])
+
