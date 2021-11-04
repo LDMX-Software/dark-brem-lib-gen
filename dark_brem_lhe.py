@@ -40,9 +40,19 @@ class ColumnList :
     def __getattr__(self, name) :
         """Called after everything else,
         we assume we are trying to get all entries for a specific
-        attribute of the particles in this list."""
+        attribute of the particles in this list.
 
-        return numpy.array([getattr(o,name) for o in self.__list])
+        Fundamental types don't have the '__dict__' attribute,
+        so if the list is empty or the first entry has the '__dict__'
+        attribute, we return a ColumnList of the requested attribute.
+        Otherwise, we return a numpy.array of the requested attribute
+        (i.e. assuming that it is the last request).
+        """
+        raw_list = [getattr(o,name) for o in self.__list]
+        if len(raw_list) == 0 or hasattr(raw_list[0],'__dict__') :
+            return ColumnList(raw_list)
+        else :
+            return numpy.array(raw_list)
 
 class DarkBremEvent :
     """A Dark Brem event parsed from the LHE file
@@ -110,11 +120,4 @@ class DarkBremFile :
         self.full_init_info = pylhe.readLHEInit(lhe_file)
         self.lepton = int(self.full_init_info['initInfo']['beamA'])
         self.incident_energy = self.full_init_info['initInfo']['energyA']
-        self.events = [e for e in read_dark_brem_lhe(lhe_file)]
-
-    def __getattr__(self, name) :
-        """Called after all other attempts, so we assume that we are getting
-        some column of objects from the events
-        """
-
-        return ColumnList([getattr(e, name) for e in self.events])
+        self.events = ColumnList([e for e in read_dark_brem_lhe(lhe_file)])

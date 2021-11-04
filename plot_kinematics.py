@@ -13,7 +13,7 @@ files = [DarkBremFile(os.path.join(sys.argv[1],f)) for f in os.listdir(sys.argv[
 
 for f in files :
     mpl.hist(
-        f.dark_photon.e / f.incident_energy,
+        f.events.dark_photon.e / f.incident_energy,
         bins = 200,
         range = (0.,1.),
         histtype = 'step'
@@ -23,7 +23,7 @@ mpl.clf()
 
 for f in files :
     mpl.hist(
-        f.recoil_lepton.e / f.incident_energy,
+        f.events.recoil_lepton.e / f.incident_energy,
         bins = 200,
         range = (0.,1.),
         histtype = 'step'
