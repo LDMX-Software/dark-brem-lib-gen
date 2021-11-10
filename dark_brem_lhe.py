@@ -177,5 +177,54 @@ class DarkBremEventLibrary :
         # sort by incident energy
         self.files.sort(reverse = True, key = lambda f : f.incident_energy)
 
+        self.lepton_str = 'Electrons'
+        if self.lepton == 13 :
+            self.lepton_str = 'Muons'
+
     def __repr__(self) :
-        return f'DarkBremEventLibrary(lepton={self.lepton},target=[{self.target},{self.target_mass}GeV])'
+        return f'DarkBremEventLibrary(lepton={self.lepton_str},target=[{self.target},{self.target_mass}GeV])'
+
+    def __str__(self) :
+        return f'Dark Brem Event Library of {self.lepton_str} on {self.target_mass} GeV Target'
+
+def pt(particles) :
+    """Calculate transverse momentum for the input list of particles
+    
+    Parameters
+    ----------
+    particles : ColumnList[pylhe.LHEParticle]
+        particles to calculate
+
+    Return
+    ------
+      numpy.array of pt values
+    """
+    return numpy.sqrt(particles.px**2 + particles.py**2)
+
+def cosphi(particles) :
+    """Calculate cos(phi) for the input list of particles
+    
+    Parameters
+    ----------
+    particles : ColumnList[pylhe.LHEParticle]
+        particles to calculate
+
+    Return
+    ------
+      numpy.array of cos(phi) values
+    """
+    return particles.px / pt(particles)
+
+def costheta(particles) :
+    """Calculate cos(theta) for the input list of particles
+
+    Parameters
+    ----------
+    particles : ColumnList[pylhe.LHEParticle]
+        particlese to calculate cos(theta) for
+
+    Return
+    ------
+      numpy.array of cos(theta) values
+    """
+    return particles.pz / numpy.sqrt( particles.px ** 2 + particles.py ** 2 + particles.pz ** 2 )
