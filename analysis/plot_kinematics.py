@@ -29,7 +29,7 @@ def plot(dblib_d, output_d = 'plots') :
             bins = 200,
             range = (0.,1.),
             histtype = 'step',
-            label = f'{f.incident_energy} GeV Leptons',
+            label = f'{f.incident_energy} GeV {f.lepton_str}',
             log = True
             )
     mpl.ylabel('Events')
@@ -45,7 +45,7 @@ def plot(dblib_d, output_d = 'plots') :
             bins = 200,
             range = (-1,1),
             histtype = 'step',
-            label = f'{f.incident_energy} GeV Leptons',
+            label = f'{f.incident_energy} GeV {f.lepton_str}',
             log = True
             )
     mpl.ylabel('Events')
@@ -61,7 +61,7 @@ def plot(dblib_d, output_d = 'plots') :
             bins = 200,
             range = (-1,1),
             histtype = 'step',
-            label = f'{f.incident_energy} GeV Leptons',
+            label = f'{f.incident_energy} GeV {f.lepton_str}',
             log = True
             )
     mpl.ylabel('Events')
@@ -79,7 +79,7 @@ def plot(dblib_d, output_d = 'plots') :
             bins = 200,
             range = (0.,1.),
             histtype = 'step',
-            label = f'{f.incident_energy} GeV Leptons',
+            label = f'{f.incident_energy} GeV {f.lepton_str}',
             log = True
             )
     mpl.ylabel('Events')
@@ -95,7 +95,7 @@ def plot(dblib_d, output_d = 'plots') :
             bins = 200,
             range = (-1,1),
             histtype = 'step',
-            label = f'{f.incident_energy} GeV Leptons',
+            label = f'{f.incident_energy} GeV {f.lepton_str}',
             log = True
             )
     mpl.ylabel('Events')
@@ -111,7 +111,7 @@ def plot(dblib_d, output_d = 'plots') :
             bins = 200,
             range = (-1,1),
             histtype = 'step',
-            label = f'{f.incident_energy} GeV Leptons',
+            label = f'{f.incident_energy} GeV {f.lepton_str}',
             log = True
             )
     mpl.ylabel('Events')
