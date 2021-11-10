@@ -41,7 +41,7 @@ def plot(dblib_d, output_d = 'plots') :
 
     for f in dblib.files :
         mpl.hist(
-            costheta(f.events.dark_photon),
+            dark_brem_lhe.costheta(f.events.dark_photon),
             bins = 200,
             range = (-1,1),
             histtype = 'step',
@@ -57,7 +57,7 @@ def plot(dblib_d, output_d = 'plots') :
 
     for f in dblib.files :
         mpl.hist(
-            cosphi(f.events.dark_photon),
+            dark_brem_lhe.cosphi(f.events.dark_photon),
             bins = 200,
             range = (-1,1),
             histtype = 'step',
@@ -91,7 +91,7 @@ def plot(dblib_d, output_d = 'plots') :
 
     for f in dblib.files :
         mpl.hist(
-            costheta(f.events.recoil_lepton),
+            dark_brem_lhe.costheta(f.events.recoil_lepton),
             bins = 200,
             range = (-1,1),
             histtype = 'step',
@@ -107,7 +107,7 @@ def plot(dblib_d, output_d = 'plots') :
 
     for f in dblib.files :
         mpl.hist(
-            cosphi(f.events.recoil_lepton),
+            dark_brem_lhe.cosphi(f.events.recoil_lepton),
             bins = 200,
             range = (-1,1),
             histtype = 'step',
