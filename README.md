@@ -43,3 +43,5 @@ The corresponding DockerHub repository for this image is [tomeichlersmith/dark-b
 This is a bash script that sets up a helpful working environment for using the container built using the above context.
 It defines a helpful wrapper for using the image built with this context in singularity or docker.
 
+## analysis
+A helpful python module for analyzing the dark brem event libraries separately from ldmx-sw.
