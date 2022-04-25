@@ -8,12 +8,13 @@ import tarfile
 import subprocess
 import sys
 
-target_options = {
+target_options = { # Mass [GeV], A [amu], Z
     'tungsten' : { 'mass' : 171.3, 'A' : 184.0, 'Z' : 74.0 },
     'silicon'  : { 'mass' : 26.15, 'A' : 28.08, 'Z' : 14.0 },
+    'copper'   : { 'mass' : 59.39, 'A' : 63.55, 'Z' : 29.0 }, 
     }
 
-lepton_options = {
+lepton_options = { # Mass [GeV], PDG
     'electron' : { 'mass' : 0.000511, 'pdg' : '11' },
     'muon' : { 'mass' : 0.10565837, 'pdg' : '13' }
     }
