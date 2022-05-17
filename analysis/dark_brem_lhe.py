@@ -1,15 +1,19 @@
 """Read dark brem LHE files
+
 We use the pylhe Python module developed by scikit-hep
 to parse the LHE files here.
   https://github.com/scikit-hep/pylhe
+
 pylhe API Notes
 ---------------
 Currently, the head of the master branch has diverged
 from the last release pretty significantly, so make sure
 you are on the current release tag when browsing the GitHub.
 readLHE returns a generator for looping over the events.
+
 LHEEvent 
   'particles' attribute which has the list of particles.
+
 LHEParticle
   'e' Energy
   'px', 'py', 'pz' 3 Momentum 
@@ -24,9 +28,11 @@ import os
 
 class DarkBremEvent :
     """A Dark Brem event parsed from the LHE file
+    
     This is an incredibly simple class which handles
     the assignment of physicist-helpful names to the particles
     in the LHE event.
+
     Attributes
     ----------
     dark_photon : pylhe.LHEParticle
@@ -52,6 +58,7 @@ class DarkBremEvent :
 
 def read_dark_brem_lhe(lhe_file) :
     """Generator of DarkBremEvents from the input LHE file
+
     This simply wraps the pylhe.readLHE python generator
     by wrapping their output event with our own event.
     """
@@ -61,6 +68,7 @@ def read_dark_brem_lhe(lhe_file) :
 
 class DarkBremEventFile :
     """In-memory storage of dark brem event kinematics for the input file
+
     After reading in some initialization parameters,
     we read in **all** of the events in the file.
     
@@ -85,9 +93,7 @@ class DarkBremEventFile :
         self.incident_energy = self.full_init_info['initInfo']['energyA']
         self.target = int(self.full_init_info['initInfo']['beamB'])
         self.target_mass = self.full_init_info['initInfo']['energyB']
-        event_data = []
-        for e in read_dark_brem_lhe(lhe_file) :
-            event_data.append({
+        self.events = pandas.DataFrame([{
                 'x' : 0.,
                 'y' : 0.,
                 'z' : 0.,
@@ -112,15 +118,16 @@ class DarkBremEventFile :
                 'aprime_px' : e.dark_photon.px,
                 'aprime_py' : e.dark_photon.py,
                 'aprime_pz' : e.dark_photon.pz,
-            })
-        self.events = pandas.DataFrame(event_data)
+              } for e in read_dark_brem_lhe(lhe_file) ])
 
     def __repr__(self) :
         return f'DarkBremEventFile(lepton=[{self.lepton},{self.incident_energy}GeV],target=[{self.target},{self.target_mass}GeV])'
 
 class DarkBremEventLibrary :
     """In-memory storage of dark brem event kinematics for an event library
+
     We basically hold all of the DarkBremEventFiles in one place.
+
     Attributes
     ----------
     lepton : int
@@ -170,3 +177,18 @@ class DarkBremEventLibrary :
     def events(self) :
         """Get all of the events in this library in a single dataframe"""
         return pandas.concat([f.events for f in self.files])
+
+def load(dblib) :
+    """Load the input dark brem event library into a pandas data frame
+
+    Parameters
+    ----------
+    dblib : str
+        Path to single file or directory of files of dark brem events
+    """
+    
+    if dblib.endswith('.lhe') :
+        return DarkBremEventFile(dblib).events
+    else :
+        return DarkBremEventLibrary(dblib).events()
+
