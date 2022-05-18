@@ -11,3 +11,11 @@ so a good place to get started is to install the requirements listed here.
 ```
 python -m pip install -r requirements.txt
 ```
+
+## Usage
+Using the module is pretty straightforward after you install the necessary requirements.
+```python
+import dark_brem_lhe.load as dbl_load
+df = dbl_load('<path-to-dblib>')
+# df is a pandas.DataFrame with the incident and outgoing kinematics of the dark brem event
+```
