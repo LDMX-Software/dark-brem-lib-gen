@@ -2,6 +2,7 @@
 
 We use the pylhe Python module developed by scikit-hep
 to parse the LHE files here.
+
   https://github.com/scikit-hep/pylhe
 
 pylhe API Notes
@@ -9,6 +10,7 @@ pylhe API Notes
 Currently, the head of the master branch has diverged
 from the last release pretty significantly, so make sure
 you are on the current release tag when browsing the GitHub.
+
 readLHE returns a generator for looping over the events.
 
 LHEEvent 
@@ -28,11 +30,11 @@ import os
 
 class DarkBremEvent :
     """A Dark Brem event parsed from the LHE file
-    
+
     This is an incredibly simple class which handles
     the assignment of physicist-helpful names to the particles
     in the LHE event.
-
+    
     Attributes
     ----------
     dark_photon : pylhe.LHEParticle
@@ -72,6 +74,13 @@ class DarkBremEventFile :
     After reading in some initialization parameters,
     we read in **all** of the events in the file.
     
+    For some god-foresaken reason, the line in the MGGenerationInfo block
+    labeled 'Integrated weight (pb)' and the entry in the init block that
+    is the integrated weight by the schema definition are not the same always.
+    
+    We are choosing to just always use the MGGenerationInfo block one.
+    This unfortunately requires a third parsing of the document.
+    
     Attributes
     ----------
     lepton : int
@@ -83,6 +92,8 @@ class DarkBremEventFile :
         WARNING: This may not change if we are only changing the target mass for different target materials
     target_mass : float
         Mass of target nucleus [GeV]
+    xsec : float
+        total cross section for the events in this file
     events : pandas.DataFrame
         DataFrame of events in this file
     """
@@ -93,7 +104,16 @@ class DarkBremEventFile :
         self.incident_energy = self.full_init_info['initInfo']['energyA']
         self.target = int(self.full_init_info['initInfo']['beamB'])
         self.target_mass = self.full_init_info['initInfo']['energyB']
-        self.events = pandas.DataFrame([{
+        
+        with open(lhe_file) as text :
+            matches = [l for l in text.readlines() if 'Integrated' in l]
+            if len(matches) != 1 :
+                raise KeyError(f'More than one line in {lhe_file} with Integrated in it.')
+            self.xsec = float(matches[0].split()[-1])
+        
+        event_data = []
+        for e in read_dark_brem_lhe(lhe_file) :
+            event_data.append({
                 'x' : 0.,
                 'y' : 0.,
                 'z' : 0.,
@@ -118,7 +138,8 @@ class DarkBremEventFile :
                 'aprime_px' : e.dark_photon.px,
                 'aprime_py' : e.dark_photon.py,
                 'aprime_pz' : e.dark_photon.pz,
-              } for e in read_dark_brem_lhe(lhe_file) ])
+            })
+        self.events = pandas.DataFrame(event_data)
 
     def __repr__(self) :
         return f'DarkBremEventFile(lepton=[{self.lepton},{self.incident_energy}GeV],target=[{self.target},{self.target_mass}GeV])'
@@ -143,8 +164,13 @@ class DarkBremEventLibrary :
         List of DarkBremEventFiles in this library
     """
 
-    def __init__(self, library_d) :
-        self.files = [DarkBremEventFile(os.path.join(library_d,f)) for f in os.listdir(library_d) if f.endswith('lhe')]
+    def __init__(self, library_d, *,
+                 filt_substr = None) :
+        self.files = [
+            DarkBremEventFile(os.path.join(library_d,f)) 
+            for f in os.listdir(library_d) if 
+            f.endswith('lhe') and (filt_substr is None or filt_substr in f)
+        ]
         if len(self.files) == 0 :
             raise Exception(f'Passed library {library_d} does not have any LHE files in it.')
 
@@ -177,18 +203,38 @@ class DarkBremEventLibrary :
     def events(self) :
         """Get all of the events in this library in a single dataframe"""
         return pandas.concat([f.events for f in self.files])
-
-def load(dblib) :
-    """Load the input dark brem event library into a pandas data frame
-
-    Parameters
-    ----------
-    dblib : str
-        Path to single file or directory of files of dark brem events
-    """
     
-    if dblib.endswith('.lhe') :
-        return DarkBremEventFile(dblib).events
-    else :
-        return DarkBremEventLibrary(dblib).events()
-
+    def total_xsec(self) :
+        """Get the table of incident energies vs total cross section"""
+        return pandas.DataFrame(data={
+            'energy' : [f.incident_energy for f in self.files],
+            'xsec' : [f.xsec for f in self.files]
+        })
+    
+if __name__ == '__main__' :
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="""
+        extract event kinematic and total cross section information
+        from a directory of LHE files into a single HDF5 file with
+        two pandas DataFrames stored inside
+        """
+    )
+    parser.add_argument('dir',
+                        help='directory of MG LHE files to retrieve')
+    parser.add_argument('--filter',
+                        help='string to filter out only some of the LHE files in the directory')
+    parser.add_argument('--output',
+                        help='define desitination HDF5 file to store dataframes')
+    
+    arg = parser.parse_args()
+    
+    if arg.dir.endswith('/') :
+        arg.dir = arg.dir[:-1]
+    output = arg.dir+'.h5'
+    if arg.output is not None :
+        output = arg.output
+    
+    dbel = DarkBremEventLibrary(arg.dir, filt_substr = arg.filter)
+    dbel.events().to_hdf(output, 'events')
+    dbel.total_xsec().to_hdf(output, 'total_xsec')
