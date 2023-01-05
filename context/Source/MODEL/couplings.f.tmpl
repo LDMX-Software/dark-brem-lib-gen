@@ -222,11 +222,11 @@ c UserMode couplings
 c************************************
 
       Anuc = {target_A}
-      aval = 111.0/( elemass*Znuc**(1.0/3.0) )
-c      aval = 106.0/( elemass*Znuc**(1.0/3.0) ) ! Beryllium
+      aval = 111.0/( 0.000511*Znuc**(1.0/3.0) )
+c      aval = 106.0/( 0.000511*Znuc**(1.0/3.0) ) ! Beryllium
       dval = 0.164/Anuc**(2.0/3.0)
-      apval = 773.0/( elemass*Znuc**(2.0/3.0) ) 
-c      apval = 571.4/( elemass*Znuc**(2.0/3.0) ) ! Beryllium
+      apval = 773.0/( 0.000511*Znuc**(2.0/3.0) ) 
+c      apval = 571.4/( 0.000511*Znuc**(2.0/3.0) ) ! Beryllium
 
       tval = -(pp(0,Nin)-pp(0,Nout))**2
      $       +(pp(1,Nin)-pp(1,Nout))**2
