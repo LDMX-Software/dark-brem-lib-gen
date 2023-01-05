@@ -71,6 +71,8 @@ def generate() :
         help='Target material to shoot leptons at.')
     parser.add_argument('--lepton',default='electron',choices=lepton_options.keys(),
         help='Leptons to shoot.')
+    parser.add_argument('--elastic-ff-only',action='store_true',
+        help='only include elastic part of form factor in dark brem coupling')
 
     arg = parser.parse_args()
 
@@ -109,6 +111,17 @@ def generate() :
     write('Source/MODEL/couplings.f',
         target_A = target['A'])
 
+    if arg.elastic_ff_only :
+        # comment out the inelastic part of the FF
+        shutil.copy2('Source/MODEL/couplings.f', 'Source/MODEL/couplings.f.bak')
+        with open('Source/MODEL/couplings.f','w') as new :
+            with open('Source/MODEL/couplings.f.bak') as og :
+                for ln, line in enumerate(og) :
+                    # skip the two lines adding the inelastic FF term
+                    if ln == 237 or ln == 238 :
+                        continue
+                    new.write(line)
+            
     energy = arg.max_energy
     while energy > min_energy*(1.-arg.rel_step) :
         write('Cards/run_card.dat',

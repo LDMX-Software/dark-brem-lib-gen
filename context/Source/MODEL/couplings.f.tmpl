@@ -234,9 +234,10 @@ c      apval = 571.4/( elemass*Znuc**(2.0/3.0) ) ! Beryllium
      $       +(pp(3,Nin)-pp(3,Nout))**2
 
       fullcoupling = ee * (Znuc**2 *aval**4 *
-     $     tval**2/((1+aval**2*tval)*(1+tval/dval))**2 +
-     $     Znuc * apval**4 * tval**2 * (1+1.9276*tval)**2 /
-     $     ((1+apval**2*tval)*(1+1.40845*tval)**4)**2 )**0.5
+     $     tval**2/((1+aval**2*tval)*(1+tval/dval))**2
+     $     + Znuc * apval**4 * tval**2 * (1+1.9276*tval)**2 /
+     $     ((1+apval**2*tval)*(1+1.40845*tval)**4)**2 
+     $     )**0.5
 
 C$$$      do i=1,7
 C$$$         write(*,*) "P" , i,"= ", 
