@@ -3,7 +3,7 @@
 This repository stores the build context for a container image which holds a specific instance of MadGraph
 designed to generate dark bremsstrahlung events over a range of incident lepton energies. Specifically,
 the output of running this container is a "library" of dark brem events which can be used within
-[LDMX's simulation infrastructure](https://github.com/LDMX-Software/SimCore).
+[G4DarkBreM](https://github.com/tomeichlersmith/G4DarkBreM).
 
 ## Quick Start
 If you aren't developing the container and just wish to use it,
