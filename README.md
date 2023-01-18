@@ -45,3 +45,31 @@ It defines a helpful wrapper for using the image built with this context in sing
 
 ## analysis
 A helpful python module for analyzing the dark brem event libraries separately from ldmx-sw.
+
+# Batch Running
+The environment script is able to deduce if it is in a non-interactive environment, 
+so it can be used within another script to (for example) use within a batch processing
+system. For example, a script I use with [HTCondor](https://htcondor.readthedocs.io/en/latest/) 
+is below. The path `/full/path/to/shared/location` is the full path to a filesystem shared
+across all worker nodes.
+
+```bash
+#!/bin/bash
+set -ex
+# initialize dbgen environment
+source /full/path/to/shared/location/env.sh
+# use a pre-built SIF file to avoid overloading DockerHub's pull limit
+dbgen use /full/path/to/shared/location/tomeichlersmith_dark-brem-lib-gen_v4.4.sif
+# local scratch area
+mkdir scratch
+dbgen work scratch
+# run dbgen with the arguments to this script
+dbgen run $@
+
+# condor doesn't scan subdirectories so we should move the LHE files here
+#  you could avoid this nonsense with some extra condor config
+find \
+  -type f \
+  -name "*.lhe" \
+  -exec mv {} . ';'
+```
