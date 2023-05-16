@@ -81,11 +81,9 @@ jobs:
             _push_tags="$_push_tags,${DOCKER_REPO}:sha-${GITHUB_SHA::8}"
             _test_tag="sha-${GITHUB_SHA::8}" 
           fi
-          echo "Generated Tags: ${_push_tags}"
-          echo "Re-Tag: ${_retag}"
-          echo ::set-output name=push_tags::${_push_tags}
-          echo ::set-output name=retag::${_retag}
-          echo ::set-output name=test_tag::${_test_tag}
+          echo "push_tags=${_push_tags}" | tee -a $GITHUB_OUTPUT
+          echo "retag=${_retag}" | tee -a $GITHUB_OUTPUT
+          echo "test_tag=${_test_tag}" | tee -a $GITHUB_OUTPUT
     -
       name: Build the Image
       if: ${{contains(steps.generate_tag.outputs.retag,'noop')}}
