@@ -13,6 +13,7 @@ target_options = { # Mass [GeV], A [amu], Z
     'silicon'  : { 'mass' : 26.15, 'A' : 28.08, 'Z' : 14.0 },
     'copper'   : { 'mass' : 59.39, 'A' : 63.55, 'Z' : 29.0 }, 
     'lead'     : { 'mass' : 194.3, 'A' : 207.2, 'Z' : 82.0 }, 
+    'oxygen'   : { 'mass' : 15.02, 'A' : 15.99, 'Z' :  8.0 },
     }
 
 lepton_options = { # Mass [GeV], PDG
