@@ -68,7 +68,7 @@ def generate() :
         help='Maximum energy the recoil lepton is allowed to have in GeV.')
     parser.add_argument('--apmass',default=0.01,type=float,
         help='Mass of the dark photon (A\') in GeV')
-    parser.add_argument('--target',default='tungsten',choices=target_options.keys(),
+    parser.add_argument('--target',default=['tungsten'],choices=target_options.keys(),
         help='Target material (or materials) to shoot leptons at.', nargs='+')
     parser.add_argument('--lepton',default='electron',choices=lepton_options.keys(),
         help='Leptons to shoot.')
