@@ -69,16 +69,13 @@ def generate() :
     parser.add_argument('--apmass',default=0.01,type=float,
         help='Mass of the dark photon (A\') in GeV')
     parser.add_argument('--target',default='tungsten',choices=target_options.keys(),
-        help='Target material to shoot leptons at.')
+        help='Target material (or materials) to shoot leptons at.', nargs='+')
     parser.add_argument('--lepton',default='electron',choices=lepton_options.keys(),
         help='Leptons to shoot.')
     parser.add_argument('--elastic-ff-only',action='store_true',
         help='only include elastic part of form factor in dark brem coupling')
 
     arg = parser.parse_args()
-
-    lepton = lepton_options[arg.lepton]
-    target = target_options[arg.target]
 
     min_energy = arg.max_energy/2.
     if arg.min_energy is not None :
@@ -87,7 +84,7 @@ def generate() :
     # user mounts output directory to specific location in container
     out_dir = '/output'
 
-    library_name=f'{arg.lepton}_{arg.target}_MaxE_{arg.max_energy}_MinE_{min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
+    library_name=f'{arg.lepton}_{"".join(arg.target)}_MaxE_{arg.max_energy}_MinE_{min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
     library_dir=os.path.join(out_dir,library_name)
 
     os.makedirs(out_dir    , exist_ok = True)
@@ -103,47 +100,52 @@ def generate() :
         os.chdir(new_working_dir)
     # done with movement
 
-    write('Cards/param_card.dat', 
-        ap_mass = arg.apmass, 
-        lepton_mass = lepton['mass'],
-        target_Z = target['Z'], 
-        target_mass = target['mass'])
+    lepton = lepton_options[arg.lepton]
 
-    write('Source/MODEL/couplings.f',
-        target_A = target['A'])
+    for target_opt in arg.target :
+        target = target_options[target_opt]
 
-    if arg.elastic_ff_only :
-        # comment out the inelastic part of the FF
-        shutil.copy2('Source/MODEL/couplings.f', 'Source/MODEL/couplings.f.bak')
-        with open('Source/MODEL/couplings.f','w') as new :
-            with open('Source/MODEL/couplings.f.bak') as og :
-                for ln, line in enumerate(og) :
-                    # skip the two lines adding the inelastic FF term
-                    if ln == 237 or ln == 238 :
-                        continue
-                    new.write(line)
-            
-    energy = arg.max_energy
-    while energy > min_energy*(1.-arg.rel_step) :
-        write('Cards/run_card.dat',
-            nevents = arg.nevents,
-            run = arg.run,
-            lepton_energy = energy,
+        write('Cards/param_card.dat', 
+            ap_mass = arg.apmass, 
             lepton_mass = lepton['mass'],
-            max_recoil_energy = arg.max_recoil,
+            target_Z = target['Z'], 
             target_mass = target['mass'])
 
-        prefix = f'{library_name}_IncidentEnergy_{energy}'
+        write('Source/MODEL/couplings.f',
+            target_A = target['A'])
 
-        subprocess.run(['./bin/generate_events','0',prefix],check = True)
-
-        with gzip.open(f'Events/{prefix}_unweighted_events.lhe.gz','rt') as zipped_lhe :
-            with open(f'{library_dir}/{prefix}_unweighted_events.lhe','w') as lhe :
-                # translate PDGs of 11 to correct lepton PDG just in case we ran with muons
-                content = zipped_lhe.read().replace(' 11 ',f' {lepton["pdg"]} ')
-                lhe.write(content)
-
-        energy = round(energy*(1.-arg.rel_step),3)
+        if arg.elastic_ff_only :
+            # comment out the inelastic part of the FF
+            shutil.copy2('Source/MODEL/couplings.f', 'Source/MODEL/couplings.f.bak')
+            with open('Source/MODEL/couplings.f','w') as new :
+                with open('Source/MODEL/couplings.f.bak') as og :
+                    for ln, line in enumerate(og) :
+                        # skip the two lines adding the inelastic FF term
+                        if ln == 237 or ln == 238 :
+                            continue
+                        new.write(line)
+                
+        energy = arg.max_energy
+        while energy > min_energy*(1.-arg.rel_step) :
+            write('Cards/run_card.dat',
+                nevents = arg.nevents,
+                run = arg.run,
+                lepton_energy = energy,
+                lepton_mass = lepton['mass'],
+                max_recoil_energy = arg.max_recoil,
+                target_mass = target['mass'])
+    
+            prefix = f'{library_name}_{target_opt}_IncidentEnergy_{energy}'
+    
+            subprocess.run(['./bin/generate_events','0',prefix],check = True)
+    
+            with gzip.open(f'Events/{prefix}_unweighted_events.lhe.gz','rt') as zipped_lhe :
+                with open(f'{library_dir}/{prefix}_unweighted_events.lhe','w') as lhe :
+                    # translate PDGs of 11 to correct lepton PDG just in case we ran with muons
+                    content = zipped_lhe.read().replace(' 11 ',f' {lepton["pdg"]} ')
+                    lhe.write(content)
+    
+            energy = round(energy*(1.-arg.rel_step),3)
 
     if arg.pack :
         with tarfile.open(f'{out_dir}/{library_name}.tar.gz','w:gz') as tar_handle :
