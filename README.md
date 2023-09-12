@@ -20,6 +20,31 @@ dbgen work /scratch/dir # big (>1GB) scratch directory (default is /tmp)
 dbgen run --help # print out runtime options
 ```
 
+## Usage Manual
+This section lists the different command line options with a bit more explanation that what the command line itself has room for.
+
+`--pack` instructs the script to package the directory of generated LHE files into a tar-ball (`.tar.gz` file) after they are all written to the output directory. This can be helpful if the newly-generated library needs to be moved immediately after generation since it is generally easier to move only one file that a directory of files.
+
+`--run` changes the run number for MadGraph which is used as its random seed. This should be changed if multiple libraries with the same parameters wish to be generated for larger signal samples.
+
+`--nevents` sets the number of events _for each_ energy point in the library. Generally, MadGraph (especially MadGraph4) is limited to under 100k events for each random seed that is used and so the default of 20k is a reasonable number.
+
+`--max_energy` sets the highest energy (in GeV) to be put into the reference library.
+
+`--min_energy` sets the minimum energy (in GeV) to be put into the reference library. The default is half of the maximum energy.
+
+`--rel_step` sets the relative step size between different energy sampling points in the library. The default is 0.1 (or 10%) which was determined qualitatively by looking at distributions studying the scaling behavior implemented in G4DarkBreM.
+
+`--max_recoil` sets the maximum energy (in GeV) a recoil lepton is allowed to have. The default is `1d5` (or no maximum in MadGraph4). This has not been studied in any detail and could very easily not be doing what I think it is doing.
+
+`--apmass` sets the mass of the dark photon (in GeV) for MadGraph to use in the dark brem.
+
+`--target` sets the target material(s) to shoot leptons at. If more than one material is provided, then the library will contain all of the configured energy sample points for each of the different materials. The available materials are shown in the help message - other materials can be added once the mass of the nucleus (in GeV), the atomic mass (in amu), and the atomic number are known.
+
+`--lepton` sets the lepton to shoot (either electrons or muons).
+
+`--elastic-ff-only` edits the nuclear form factor equation to only include the elastic part in the dark brem coupling. This was helpful when studying the total cross section but should _not_ be used in any signal simulation sample.
+
 ## context
 
 <a href="https://github.com/tomeichlersmith/mg-dark-brem/actions" alt="Actions">
