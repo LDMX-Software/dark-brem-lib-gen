@@ -309,7 +309,7 @@ __dbgen_use_help() {
 
 HELP
 }
-export DBGEN_IMAGE_REPO="tomeichlersmith/dark-brem-lib-gen"
+export DBGEN_IMAGE_REPO="ldmx/dark-brem-lib-gen"
 export DBGEN_IMAGE_TAG="latest"
 unset DBGEN_SIF
 __dbgen_use() {
@@ -440,7 +440,7 @@ __dbgen_clean() {
     unset DBGEN_DEST
     unset DBGEN_WORK
     unset DBGEN_SIF
-    export DBGEN_IMAGE_REPO="tomeichlersmith/dark-brem-lib-gen"
+    export DBGEN_IMAGE_REPO="ldmx/dark-brem-lib-gen"
     export DBGEN_IMAGE_TAG="latest"
   fi
 
