@@ -11,7 +11,7 @@ you do not need to clone this entire repository. You can simply download
 the environment script and start running it.
 
 ```
-wget https://raw.githubusercontent.com/tomeichlersmith/dark-brem-lib-gen/main/env.sh
+wget https://raw.githubusercontent.com/LDMX-Software/dark-brem-lib-gen/main/env.sh
 source env.sh
 dbgen use v4.0 # choose version, must be version 4 or newer (older versions used different interface)
 dbgen cache /big/cache/dir # choose location for caching image layers
@@ -47,8 +47,8 @@ This section lists the different command line options with a bit more explanatio
 
 ## context
 
-<a href="https://github.com/tomeichlersmith/mg-dark-brem/actions" alt="Actions">
-    <img src="https://github.com/tomeichlersmith/dark-brem-lib-gen/workflows/CI/badge.svg" />
+<a href="https://github.com/LDMX-Software/dark-brem-lib-gen/actions" alt="Actions">
+    <img src="https://github.com/LDMX-Software/dark-brem-lib-gen/workflows/CI/badge.svg" />
 </a>
 
 This directory contains the actual build context for a docker image that can run the necessary [MadGraph](https://cp3.irmp.ucl.ac.be/projects/madgraph/) event generation script.
