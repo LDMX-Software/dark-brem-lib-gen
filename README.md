@@ -62,7 +62,7 @@ Currently, the MadGraph event generation can handle the following variables.
 - Relative step between sampling points in library
 - Run Number (used as random number seed) 
 
-The corresponding DockerHub repository for this image is [tomeichlersmith/dark-brem-lib-gen](https://hub.docker.com/repository/docker/tomeichlersmith/dark-brem-lib-gen).
+The corresponding DockerHub repository for this image is [ldmx/dark-brem-lib-gen](https://hub.docker.com/repository/docker/ldmx/dark-brem-lib-gen).
 
 ## env.sh
 This is a bash script that sets up a helpful working environment for using the container built using the above context.
@@ -84,7 +84,7 @@ set -ex
 # initialize dbgen environment
 source /full/path/to/shared/location/env.sh
 # use a pre-built SIF file to avoid overloading DockerHub's pull limit
-dbgen use /full/path/to/shared/location/tomeichlersmith_dark-brem-lib-gen_v4.4.sif
+dbgen use /full/path/to/shared/location/dark-brem-lib-gen_v4.4.sif
 # local scratch area
 mkdir scratch
 dbgen work scratch
