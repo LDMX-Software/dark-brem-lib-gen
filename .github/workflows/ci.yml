@@ -13,7 +13,7 @@ on:
       - 'v*.*'
 
 env:
-  DOCKER_REPO: tomeichlersmith/dark-brem-lib-gen
+  DOCKER_REPO: ldmx/dark-brem-lib-gen
 
 # workflow consists of one building and testing job
 jobs:
