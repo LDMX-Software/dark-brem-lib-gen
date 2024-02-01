@@ -14,6 +14,8 @@ target_options = { # Mass [GeV], A [amu], Z
     'copper'   : { 'mass' : 59.39, 'A' : 63.55, 'Z' : 29.0 }, 
     'lead'     : { 'mass' : 194.3, 'A' : 207.2, 'Z' : 82.0 }, 
     'oxygen'   : { 'mass' : 15.02, 'A' : 15.99, 'Z' :  8.0 },
+    'lutetium' : { 'mass' : 164.3, 'A' : 175.0, 'Z' : 71.0 },
+    'yttrium'  : { 'mass' : 83.57, 'A' : 89.00, 'Z' : 39.0 },
     }
 
 lepton_options = { # Mass [GeV], PDG
