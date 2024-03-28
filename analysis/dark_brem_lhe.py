@@ -5,13 +5,7 @@ to parse the LHE files here.
 
   https://github.com/scikit-hep/pylhe
 
-pylhe API Notes
----------------
-Currently, the head of the master branch has diverged
-from the last release pretty significantly, so make sure
-you are on the current release tag when browsing the GitHub.
-
-readLHE returns a generator for looping over the events.
+read_lhe returns a generator for looping over the events.
 
 LHEEvent 
   'particles' attribute which has the list of particles.
@@ -65,7 +59,7 @@ def read_dark_brem_lhe(lhe_file) :
     by wrapping their output event with our own event.
     """
 
-    for lhe_event in pylhe.readLHE(lhe_file) :
+    for lhe_event in pylhe.read_lhe(lhe_file) :
         yield DarkBremEvent(lhe_event)
 
 class DarkBremEventFile :
@@ -99,7 +93,7 @@ class DarkBremEventFile :
     """
 
     def __init__(self, lhe_file) :
-        self.full_init_info = pylhe.readLHEInit(lhe_file)
+        self.full_init_info = pylhe.read_lhe_init(lhe_file)
         self.lepton = int(self.full_init_info['initInfo']['beamA'])
         self.incident_energy = self.full_init_info['initInfo']['energyA']
         self.target = int(self.full_init_info['initInfo']['beamB'])
