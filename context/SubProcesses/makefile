@@ -1,50 +1,101 @@
-F77 = gfortran -std=legacy
-FFLAGS= -O -ffixed-line-length-132
-#FFLAGS = -g -ffixed-line-length-132
+include ../../Source/make_opts
+FFLAGS+= -w
+
+# Load additional dependencies of the bias module, if present
+ifeq (,$(wildcard ../bias_dependencies))
+BIASDEPENDENCIES =
+else
+include ../bias_dependencies
+endif
+
+# Definitions
+
 LIBDIR = ../../lib/
 BINDIR = ../../bin/
-# $B$ obj_for_MW $B$ !this is a tag for MadWeight. Don't edit this line
 PROG   = madevent
-# $E$ obj_for_MW $E$ !this is a tag for MadWeight. Don't edit this line
-LINKLIBS =  -L../../lib/ -ldhelas3 -ldsample -lmodel -lgeneric -lpdf
-LIBS = $(LIBDIR)libdhelas3.a $(LIBDIR)libdsample.a $(LIBDIR)libgeneric.a $(LIBDIR)libpdf.a $(LIBDIR)libmodel.a
+
+ifneq ("$(wildcard ../MadLoop_makefile_definitions)","")
+    include ../MadLoop_makefile_definitions
+else
+    LINK_LOOP_LIBS =
+    LOOP_LIBS =
+    LOOP_INCLUDE =
+    LINK_MADLOOP_LIB =
+    MADLOOP_LIB =
+endif
+
+LINKLIBS = $(LINK_MADLOOP_LIB) $(LINK_LOOP_LIBS) -L../../lib/ -ldhelas -ldsample -lmodel -lgeneric -lpdf -lgammaUPC -lcernlib $(llhapdf) -lbias 
+
+LIBS = $(LIBDIR)libbias.$(libext) $(LIBDIR)libdhelas.$(libext) $(LIBDIR)libdsample.$(libext) $(LIBDIR)libgeneric.$(libext) $(LIBDIR)libpdf.$(libext) $(LIBDIR)libgammaUPC.$(libext) $(LIBDIR)libmodel.$(libext) $(LIBDIR)libcernlib.$(libext) $(MADLOOP_LIB) $(LOOP_LIBS)
+
+ifneq ("$(wildcard ../../Source/RUNNING)","")
+    LINKLIBS += -lrunning
+    LIBS += $(LIBDIR)librunning.$(libext) 
+endif
 
 
-PROCESS= driver.o myamp.o auto_dsig.o genps.o matrix.o unwgt.o setcuts.o cuts.o cluster.o reweight.o initcluster.o addmothers.o setscales.o
-SYMMETRY = myamp.o genps.o matrix.o  initcluster.o setscales.o reweight.o
-# $B$ obj_for_MW $E$ !this is a tag for MadWeight. Don't edit this line
+# Source files
+
+MATRIX_HEL = $(patsubst %.f,%.o,$(wildcard matrix*_orig.f))
+MATRIX = $(patsubst %.f,%.o,$(wildcard matrix*_optim.f))
+ifeq ($(strip $(MATRIX_HEL)),)
+        MATRIX = $(patsubst %.f,%.o,$(wildcard matrix*.f))
+endif
 
 
-%.o : %.f
-	$(F77) $(FFLAGS) -c $<
+PROCESS= driver.o myamp.o genps.o unwgt.o setcuts.o get_color.o \
+         cuts.o cluster.o reweight.o initcluster.o addmothers.o setscales.o \
+	 idenparts.o dummy_fct.o \
+         $(patsubst %.f,%.o,$(wildcard auto_dsig*.f)) \
 
-# $B$ main_make $B$ !this is a tag for MadWeight. Don't edit this line
-$(PROG): $(PROCESS)  makefile $(LIBS)
-	$(F77) $(FFLAGS) -o $(PROG) $(PROCESS) $(LINKLIBS)
-# $E$ main_make $E$ !this is a tag for MadWeight. Don't edit this line
+SYMMETRY = symmetry.o idenparts.o 
 
-symmetry.dat: mg.sym gensym
-	./gensym
+# Binaries
 
-gensym: symmetry.o genps.inc setcuts.o cuts.o cluster.o $(SYMMETRY) configs.inc  
-	$(F77) $(FFLAGS) -o gensym symmetry.o setcuts.o cuts.o cluster.o $(SYMMETRY) $(LINKLIBS)
+$(PROG): $(PROCESS) auto_dsig.o $(LIBS) $(MATRIX)
+	$(FC) -o $(PROG) $(PROCESS) $(MATRIX) $(LINKLIBS) $(LDFLAGS) $(BIASDEPENDENCIES)
 
-driver.f: genps.inc qmass.inc 
-setcuts.f: qmass.inc
+$(PROG)_forhel: $(PROCESS) auto_dsig.o $(LIBS) $(MATRIX_HEL)
+	$(FC) -o $(PROG)_forhel $(PROCESS) $(MATRIX_HEL) $(LINKLIBS) $(LDFLAGS) $(BIASDEPENDENCIES)
 
-genps.inc: nexternal.inc
-	touch genps.inc
+gensym: $(SYMMETRY) configs.inc $(LIBS)
+	$(FC) -o gensym $(SYMMETRY) -L../../lib/ $(LINKLIBS) $(LDFLAGS)
 
-qmass.inc: nexternal.inc
-	touch qmass.inc
+$(LIBDIR)libmodel.$(libext): ../../Cards/param_card.dat
+	cd ../../Source/MODEL; make
 
-symmetry.o: genps.inc configs.inc
-genps.o: genps.inc configs.inc 
-cuts.o: genps.inc pmass.inc
-invarients.o: genps.inc 
-myamp.o: props.inc genps.inc
-reweight.o: sudakov.inc cluster.inc sudakov.inc run.inc message.inc
-cluster.o: cluster.inc genps.inc message.inc
-addmothers.o: genps.inc symswap.inc message.inc
-unwgt.o: genps.inc symswap.inc cluster.inc run.inc message.inc
+$(LIBDIR)libgeneric.$(libext): ../../Cards/run_card.dat
+	cd ../../Source; make
+
+$(LIBDIR)libpdf.$(libext): 
+	cd ../../Source/PDF; make
+
+$(LIBDIR)libgammaUPC.$(libext):
+	cd ../../Source/PDF/gammaUPC; make
+
+# Add source so that the compiler finds the DiscreteSampler module.
+$(MATRIX): %.o: %.f
+	$(FC) $(FFLAGS) $(MATRIX_FLAG) -c $< -I../../Source/ -I../../Source/PDF/gammaUPC
+%.o: %.f
+	$(FC) $(FFLAGS) -c $< -I../../Source/ -I../../Source/PDF/gammaUPC
+
+# Dependencies
+
+driver.f: genps.inc
+symmetry.o: genps.inc nexternal.inc configs.inc run_config.inc ../../Source/run_card.inc
+genps.o: genps.inc nexternal.inc configs.inc
+dummy_fct.0: run.inc genps.inc
+cuts.o: genps.inc nexternal.inc pmass.inc
+setcuts.o: genps.inc run_config.inc
+invarients.o: genps.inc nexternal.inc
+myamp.o: props.inc genps.inc nexternal.inc
+reweight.o: sudakov.inc cluster.inc sudakov.inc run.inc message.inc \
+	    run_config.inc
+cluster.o: cluster.inc genps.inc nexternal.inc message.inc
+addmothers.o: genps.inc nexternal.inc symswap.inc message.inc
+unwgt.o: genps.inc nexternal.inc symswap.inc cluster.inc run.inc message.inc \
+	 run_config.inc
 initcluster.o: message.inc
+
+clean:
+	$(RM) *.o gensym madevent madevent_forhel

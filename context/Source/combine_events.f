@@ -6,57 +6,90 @@ c****************************************************************
 c
 c     Constants
 c
+      include 'maxparticles.inc'
       include 'run_config.inc'
+      include 'run.inc'
+      include 'cuts.inc'
       integer    maxsubprocesses
       parameter (maxsubprocesses=9999)
       integer    cmax_events
-      parameter (cmax_events=500000)
+      parameter (cmax_events=5000000)
       integer    sfnum
       parameter (sfnum=17)   !Unit number for scratch file
       integer    maxexternal
-      parameter (maxexternal=17)
-      integer maxpara
-      parameter (maxpara=1000)
+      parameter (maxexternal=2*max_particles-3)
+c
+c     for the run_card
+c
+      real*8 sf1,sf2,pb1,pb2,D
+      integer lhaid
+      character*7 pdlabel
 c     
 c     Local
 c
-      character*30 subname(maxsubprocesses)
+      character*300 subname(maxsubprocesses)
+      character*310 pathsubname(maxsubprocesses)         !needed for MadWeight
+      character*80 down_path                           !needed for MadWeight
+      character*40 filename                         !needed for MadWeight
+      character*4  card_number                         !needed for MadWeight
+      character*20 run_name                            !needed for MadWeight
+      integer pos1,pos2,pos3                           ! needed for MadWeight
       integer i,j,m,ns,nreq,ievent
       integer kevent,revent,iarray(cmax_events)
       double precision sum, xsec, xerr, goal_wgt,xarray(cmax_events)
+      double precision xdum,rxsec
       integer i4,r8,record_length
-      integer iseed
+      integer jseed,iseed
       real xran1
       double precision wgt,maxwgt
       double precision p(0:4,maxexternal)
       integer ic(7,maxexternal),n
-      double precision scale,aqcd,aqed
+      double precision sscale,aqcd,aqed
       character*20 param(maxpara),value(maxpara)
       integer npara,nunwgt
       double precision xtrunc, min_goal,max_goal
       logical keep(cmax_events),done
       integer ntry
       logical gridrun,gridpack
+c
+c     PARAM_CARD
+c
+      character*30 param_card_name
+      common/to_param_card_name/param_card_name
 
-      character*140 buff
-
-      data iseed/-1/
+      character*1000 buff
+      logical u_syst, has_negative
+      character*(s_bufflen) s_buff(7)
+      integer nclus
+      character*(clus_bufflen) buffclus(max_particles)
+      data s_buff/7*''/
+      data jseed/-1/
+      data buffclus/max_particles*' '/
+      double precision bias_weight
+      logical impact_xsec
+      common/bias/bias_weight,impact_xsec
 c-----
 c  Begin Code
 c-----
 c
 c     Get requested number of events
 c
-      call load_para(npara,param,value)
-      call get_logical(npara,param,value," gridrun ",gridrun,.false.)
-      call get_logical(npara,param,value," gridpack ",gridpack,.false.)
-      if (gridrun.and.gridpack) then
-         call get_integer(npara,param,value," gevents "  ,nreq  ,2000   )
-      else
-         call get_integer(npara,param,value," nevents "  ,nreq  ,10000   )
+      include 'run_card.inc'
+
+      has_negative = .false.
+      if (gridpack) then
+c        load the gridpack file
+         call load_gridpack_para(npara,param,value)
+         call get_logical(npara,param,value," gridrun ",gridrun,.false.)
       endif
 
+      if (gridrun.and.gridpack) then
+        call get_integer(npara,param,value," gevents "  ,nreq  ,2000   )
+      else
+        nreq = nevents
+      endif
 c   Get information for the <init> block
+      param_card_name = 'param_card.dat'
       call setrun
 
 c      nreq = 10000
@@ -65,11 +98,15 @@ c     Get total cross section
 c
       xsec = 0d0
       xerr = 0d0
-      open(unit=15,file='results.dat',status='old',err=21)
-      read(15,*,err=20) xsec,xerr
-      write(*,*) "Results.dat xsec = ",xsec
+c $B$ input_file $B$
+      filename='results.dat'
+c $E$ input_file $E$
+
+      open(unit=15,file=filename,status='old',err=21)
+      read(15,*,err=20) xsec,xerr,xdum,xdum,xdum,xdum,xdum,xdum,xdum,rxsec
+      write(*,*) "Results.dat xsec = ",rxsec," abs xsec = ",xsec
  20   close(15)
- 21   if (nreq .gt. 0 .and. xsec .gt. 0) then
+ 21   if (nreq .gt. 0 .and. xsec .ne. 0) then
          goal_wgt = xsec/nreq/4d0   !Extra factor of 4 for weighted events
       else
          goal_wgt = 0d0    !Write out everything
@@ -84,9 +121,12 @@ c     Create scratch file to hold events
 c
       I4 = 4
       R8 = 8
-      record_length = 4*I4+maxexternal*I4*7+maxexternal*5*R8+3*R8+
-     &   140
-      open(unit=sfnum,access='direct',file='scratch',err=999,
+      record_length = 4*I4+maxexternal*I4*7+maxexternal*5*R8+4*R8+
+     &   1000+7*s_bufflen+max_particles*clus_bufflen
+C $B$ scratch_name $B$ !this is tag for automatic modification by MW
+      filename='scratch'
+C $E$ scratch_name $E$ !this is tag for automatic modification by MW
+      open(unit=sfnum,access='direct',file=filename,err=999,
      &     recl=record_length)
 c
 c     Loop through subprocesses filling up scratch file with events
@@ -96,29 +136,59 @@ c
       revent=0
       maxwgt=0d0
       write(*,*) 'SubProcess/Channel     kept   read   xsec '
+
+C $B$ down_path $B$ !this is tag for automatic modification by MW
+      down_path=''
+c $E$ down_path $E$ !this is tag for automatic modification by MW
       do i=1,ns
 c         write(*,*) 'Subprocess: ',subname(ns)
-         call read_channels(subname(i),sum,kevent,revent,goal_wgt,maxwgt)
+         pos3=index(subname(i),' ')
+         pathsubname(i)=subname(i)(1:pos3-1)//down_path
+         call read_channels(pathsubname(i),sum,kevent,revent,goal_wgt,maxwgt)
       enddo 
 c
 c     Get Random order for events
 c
       do i=1,kevent
          iarray(i)=i
-         xarray(i)=xran1(iseed)
+         xarray(i)=xran1(jseed)
       enddo
       call sortO3(xarray,iarray,kevent)
 c
 c     Write out the events in iarray order
 c
-      open(unit=15,file='events.lhe',status='unknown',err=98)
-      call writebanner(15,kevent,sum,maxwgt,xerr)
+C $B$ output_file1 $B$ !this is tag for automatic modification by MW
+      filename='../Events/events.lhe'
+C $E$ output_file1 $E$ !this is tag for automatic modification by MW
+
+      open(unit=15,file=filename,status='unknown',err=98)
+      call writebanner(15,kevent,rxsec,maxwgt,xsec/kevent,xerr)
       do i=1,kevent
-         read(sfnum,rec=iarray(i)) wgt,n,
-     &        ((ic(m,j),j=1,maxexternal),m=1,7),ievent,
-     &        ((p(m,j),m=0,4),j=1,maxexternal),scale,aqcd,aqed,
-     &     buff
-         call write_event(15,P,wgt,n,ic,ievent,scale,aqcd,aqed,buff)
+            read(sfnum,rec=iarray(i)) wgt,n,
+     &           ((ic(m,j),j=1,maxexternal),m=1,7),ievent,
+     &           ((p(m,j),m=0,4),j=1,maxexternal),sscale,aqcd,aqed,
+     &           buff,(s_buff(j),j=1,7),(buffclus(j),j=1,max_particles),
+     &           bias_weight
+            if(bias_weight.ne.1d0) impact_xsec=.false.
+c     Systematics info on/off
+         if(s_buff(1)(1:7).eq.'<mgrwt>') then
+            u_syst=.true.
+         else
+            u_syst=.false.
+         endif
+c        Find nclus
+         nclus=max_particles
+         do j=1,max_particles
+            if(buffclus(j).eq.' ')then
+               nclus=j-1
+               exit
+            elseif(buffclus(j).eq.'</clustering>') then
+               nclus=j
+               exit
+            endif
+         enddo
+         call write_event(15,P,wgt,n,ic,ievent,sscale,aqcd,aqed,buff,
+     $        u_syst,s_buff,nclus,buffclus)
       enddo
       close(15)
 c
@@ -139,13 +209,14 @@ c
          do i=1,kevent
             read(sfnum,rec=iarray(i)) wgt,n,
      &           ((ic(m,j),j=1,maxexternal),m=1,7),ievent,
-     &           ((p(m,j),m=0,4),j=1,maxexternal),scale,aqcd,aqed,
-     &        buff
-            if (wgt .gt. goal_wgt*xran1(iseed)) then
+     &           ((p(m,j),m=0,4),j=1,maxexternal),sscale,aqcd,aqed,
+     &        buff       
+            if (dabs(wgt) .gt. goal_wgt*xran1(jseed)) then
                keep(i) = .true.
+               if (wgt.lt.0d0) has_negative = .true.
                nunwgt=nunwgt+1
-               if (wgt .gt. goal_wgt) then
-                  xtrunc=xtrunc+wgt-goal_wgt
+               if (dabs(wgt) .gt. goal_wgt) then
+                  xtrunc=xtrunc+dabs(wgt)-goal_wgt
                endif
             else
                keep(i)=.false.
@@ -165,7 +236,8 @@ c            write(*,*) min_goal,goal_wgt,max_goal
 c            write(*,*) min_goal,goal_wgt,max_goal
             if (goal_wgt .lt. min_goal) then
                done=.true.
-               write(*,*) 'Failed to find requested number of unweighted events',nreq,nunwgt
+               write(*,*) 'Failed to find requested number ',
+     $              'of unweighted events',nreq,nunwgt
             endif
          endif
          ntry=ntry+1
@@ -178,32 +250,58 @@ c            write(*,*) min_goal,goal_wgt,max_goal
          write(*,*) 'Found ',nunwgt,' events writing first ',nreq
       endif
       write(*,*) 'Unweighting selected ',nreq, ' events.'
-      write(*,'(a,f5.2,a)') 'Truncated ',xtrunc*100./sum, '% of cross section'
-      open(unit=15,file='unweighted_events.lhe',status='unknown',err=99)
-      call writebanner_u(15,nreq,xsec,xtrunc,xerr)
+      write(*,'(a,f5.2,a)') 'Truncated ',xtrunc*100./sum,
+     $     '% of cross section'
+
+C $B$ output_file2 $B$ !this is tag for automatic modification by MW
+      filename='../Events/unweighted_events.lhe'
+C $E$ output_file2 $E$ !this is tag for automatic modification by MW
+
+      open(unit=15,file=filename,status='unknown',err=99)
+      call writebanner_u(15,nreq,rxsec,xtrunc,xsec/nreq,xerr, has_negative)
       ntry = 0
       do i=1,kevent
          if (keep(i) .and. ntry .lt. nreq) then
             read(sfnum,rec=iarray(i)) wgt,n,
      &           ((ic(m,j),j=1,maxexternal),m=1,7),ievent,
-     &           ((p(m,j),m=0,4),j=1,maxexternal),scale,aqcd,aqed,
-     $        buff
-            call write_event(15,P,xsec/nreq,n,ic,ievent,scale,aqcd,aqed,buff)
+     &           ((p(m,j),m=0,4),j=1,maxexternal),sscale,aqcd,aqed,
+     &           buff,(s_buff(j),j=1,7),(buffclus(j),j=1,max_particles),
+     &           bias_weight
+            wgt=dsign(xsec/nreq,wgt)
+c     Systematics info on/off
+            if(s_buff(1)(1:7).eq.'<mgrwt>') then
+               u_syst=.true.
+            else
+               u_syst=.false.
+            endif
+c        Find nclus
+            do j=1,max_particles
+               if(buffclus(j).eq.' ')then
+                  nclus=j-1
+                  exit
+               elseif(buffclus(j).eq.'</clustering>') then
+                  nclus=j
+                  exit
+               endif
+            enddo
+            call write_event(15,P,wgt,n,ic,ievent,sscale,aqcd,aqed,
+     $           buff,u_syst,s_buff,nclus,buffclus)
             ntry=ntry+1
          endif
       enddo
       close(15)
       close(sfnum)
-      return
+      goto 1000
  98   write(*,*) 'Error writing events.dat' 
-      return
+      goto 1000
  99   write(*,*) 'Error writing unweighted_events.dat' 
-      return
+      goto 1000
  999  write(*,*) 'Error opening scratch file'
+ 1000 continue
       end
 
 
-      subroutine writebanner(lunw,nevent,sum,maxwgt,xerr)
+      subroutine writebanner(lunw,nevent,sum,maxwgt,wgt,xerr)
 c**************************************************************************************
 c     Writes out banner information at top of event file
 c**************************************************************************************
@@ -212,17 +310,22 @@ c
 c     Arguments
 c     
       integer lunw,nevent
-      double precision sum,maxwgt,xerr
+      double precision sum,maxwgt,wgt,xerr
 c
 c     Local
 c
       integer i,j
 
 c
+c     Information required for 1>N processes
+c
+      include 'nexternal.inc'
+
+c
 c     Les Houches init block (for the <init> info)
 c
       integer maxpup
-      parameter(maxpup=100)
+      parameter(maxpup=2)
       integer idbmup,pdfgup,pdfsup,idwtup,nprup,lprup
       double precision ebmup,xsecup,xerrup,xmaxup
       common /heprup/ idbmup(2),ebmup(2),pdfgup(2),pdfsup(2),
@@ -277,29 +380,39 @@ c     Now write out specific information on the event set
 c
 c
       write(lunw,'(a)') '<MGGenerationInfo>'
-      write(lunw,'(a30,i10)')   '#  Number of Events        :  ',nevent
-      write(lunw,'(a30,e10.5)') '#  Integrated weight (pb)  :  ',sum
-      write(lunw,'(a30,e10.5)') '#  Max wgt                 :  ',maxwgt
-      write(lunw,'(a30,e10.5)') '#  Average wgt             :  ',sum/nevent
+      write(lunw,'(a30,i11)')   '#  Number of Events        :  ',nevent
+      write(lunw,'(a30,e11.5)') '#  Integrated weight (pb)  :  ',sum
+      write(lunw,'(a30,e11.5)') '#  Max wgt                 :  ',maxwgt
+      write(lunw,'(a30,e11.5)') '#  Average wgt             :  ',wgt
       write(lunw,'(a)') '</MGGenerationInfo>'
+
    
     
 
 C   Write out compulsory init info
       write(lunw,'(a)') '</header>'
       write(lunw,'(a)') '<init>'
-      write(lunw,90) (idbmup(i),i=1,2),(ebmup(i),i=1,2),(pdfgup(i),i=1,2),
-     $   (pdfsup(i),i=1,2),2,nprup
-      do i=1,nprup
-         write(lunw,91) xsecup(i),xerr*xsecup(i)/sum,maxwgt,lprup(i) ! FACTOR OF nevts for maxwgt and wgt? error?
-      enddo
+      if(nincoming.eq.2)then
+
+          write(lunw,90) (idbmup(i),i=1,2),(ebmup(i),i=1,2),(pdfgup(i),i=1,2),
+     $                   (pdfsup(i),i=1,2),2,nprup
+         do i=1,nprup
+             write(lunw,91) xsecup(i),xerr*xsecup(i)/sum,maxwgt,lprup(i) ! FACTOR OF nevts for maxwgt and wgt? error?
+         enddo
+      elseif(nincoming.eq.1)then
+          write(lunw,90) (idbmup(i),i=1,2),(ebmup(i),i=1,2),-1,-1,
+     $   -1,-1,2,nprup
+          do i=1,nprup
+             write(lunw,91) xsecup(i),xerr*xsecup(i)/sum,maxwgt,lprup(i) ! FACTOR OF nevts for maxwgt and wgt? error?
+          enddo
+      endif
       write(lunw,'(a)') '</init>'
- 90   FORMAT(2i9,2e19.11,2i2,2i6,i2,i3)
+ 90   FORMAT(2i9,2e19.11,2i2,2i8,i2,i4)
  91   FORMAT(3e19.11,i4)
       end
 
 
-      subroutine writebanner_u(lunw,nevent,sum,maxwgt,xerr)
+      subroutine writebanner_u(lunw,nevent,sum,maxwgt,wgt,xerr,has_negative)
 c**************************************************************************************
 c     Writes out banner information at top of event file
 c**************************************************************************************
@@ -308,21 +421,32 @@ c
 c     Arguments
 c     
       integer lunw,nevent
-      double precision sum,maxwgt,xerr
+      double precision sum,maxwgt,wgt,xerr
+      logical has_negative
 c
 c     Local
 c
       integer i,j
+      double precision tmpsum
+      integer lhastrategy
 c
 c     Les Houches init block (for the <init> info)
 c
       integer maxpup
-      parameter(maxpup=100)
+      parameter(maxpup=2)
       integer idbmup,pdfgup,pdfsup,idwtup,nprup,lprup
       double precision ebmup,xsecup,xerrup,xmaxup
       common /heprup/ idbmup(2),ebmup(2),pdfgup(2),pdfsup(2),
      &     idwtup,nprup,xsecup(maxpup),xerrup(maxpup),
      &     xmaxup(maxpup),lprup(maxpup)
+
+c
+c     Flag on how to write the LHE events
+c     Include <clustering> tag for Pythia 8 CKKW-L matching
+c
+      logical clusinfo
+      double precision lhe_version
+      COMMON/TO_LHEFORMAT/lhe_version,clusinfo
 c
 c     Global
 c
@@ -371,22 +495,32 @@ c     Now write out specific information on the event set
 c
 
       write(lunw,'(a)') '<MGGenerationInfo>'
-      write(lunw,'(a30,i10)')   '#  Number of Events        :  ',nevent
-      write(lunw,'(a30,e10.5)') '#  Integrated weight (pb)  :  ',sum
-      write(lunw,'(a30,e10.5)') '#  Truncated wgt (pb)      :  ',maxwgt
-      write(lunw,'(a30,e10.5)') '#  Unit wgt                :  ',sum/nevent
+      write(lunw,'(a30,i11)')   '#  Number of Events        :  ',nevent
+      write(lunw,'(a30,e11.5)') '#  Integrated weight (pb)  :  ',sum
+      write(lunw,'(a30,e11.5)') '#  Truncated wgt (pb)      :  ',maxwgt
+      write(lunw,'(a30,e11.5)') '#  Unit wgt                :  ',wgt
       write(lunw,'(a)') '</MGGenerationInfo>'
+
+      if (has_negative) then
+        lhastrategy = -3
+      else
+        lhastrategy = 3
+      endif
 
 C   Write out compulsory init info
       write(lunw,'(a)') '</header>'
       write(lunw,'(a)') '<init>'
       write(lunw,90) (idbmup(i),i=1,2),(ebmup(i),i=1,2),(pdfgup(i),i=1,2),
-     $   (pdfsup(i),i=1,2),3,nprup
+     $   (pdfsup(i),i=1,2),lhastrategy,nprup
       do i=1,nprup
          write(lunw,91) xsecup(i),xerr*xsecup(i)/sum,sum/nevent,lprup(i) ! FACTOR OF nevts for maxwgt and wgt? error?
       enddo
+      if (lhe_version.ge.3) then
+        write(lunw,'(a)') "<generator name='MadGraph5_aMC@NLO' version='X.X.X'>           "
+        write(lunw,'(a)') "please cite 1405.0301 </generator>"
+      endif
       write(lunw,'(a)') '</init>'
- 90   FORMAT(2i9,2e19.11,2i2,2i6,i2,i3)
+ 90   FORMAT(2i9,2e19.11,2i2,2i8,i3,i4)
  91   FORMAT(3e19.11,i4)
 
       end
@@ -402,10 +536,11 @@ c     Constants
 c
       character*(*) symfile
       parameter (symfile='symfact.dat')
+      include 'maxparticles.inc'
 c
 c     Arguments
 c
-      character*(30) dir
+      character*(*) dir
       integer kevent,revent
       double precision sum,goal_wgt,maxwgt
 c
@@ -413,37 +548,37 @@ c     Local
 c
       integer i,j, k, ip
       double precision xi
-      character*50 dirname,dname,channame
+      character*300 dirname,dname,channame
+      integer ncode,npos
+      character*20 formstr
 c-----
 c  Begin Code
 c-----
-       i = index(dir," ")
+      i = index(dir," ")
+c     ncode is number of digits needed for the bw coding
+      ncode=int(dlog10(3d0)*(max_particles-3))+1
       dname = dir(1:i-1)// "/" // symfile
       open(unit=35, file=dname ,status='old',err=59)
       do while (.true.)
          read(35,*,err=99,end=99) xi,j
          if (j .gt. 0) then
-            if ( (xi-int(xi+.01)) .lt. 1d-5) then
-               k = int(xi+.01)
-               if (k .lt. 10) then
-                  write(dirname,'(a,i1,a)') 'G',k,'/'
-               else if (k .lt. 100) then
-                  write(dirname,'(a,i2,a)') 'G',k,'/'
-               else if (k .lt. 1000) then
-                  write(dirname,'(a,i3,a)') 'G',k,'/'
-               else if (k .lt. 10000) then
-                  write(dirname,'(a,i4,a)') 'G',k,'/'
-               endif
+            j=1 ! symmetry factor already read in auto_dsig.f
+            k = int(xi*(1+10**(-ncode)))
+            npos=int(dlog10(dble(k)))+1
+            if ( (xi-k) .eq. 0) then
+c              Write with correct number of digits
+               write(formstr,'(a,i1,a)') '(a,i',npos,',a)'
+               write(dirname, formstr) 'G',k,'/'
+            else if(npos+ncode+1.lt.10) then               !Handle B.W.
+c              Write with correct number of digits
+               write(formstr,'(a,i1,a,i1,a)') '(a,f',npos+ncode+1,
+     $                 '.',ncode,',a)'
+               write(dirname,formstr)  'G',xi,'/'
             else               !Handle B.W.
-               if (xi .lt. 10) then
-                  write(dirname,'(a,f5.3,a,a)') 'G',xi,'/'
-               else if (xi .lt. 100) then
-                  write(dirname,'(a,f6.3,a,a)') 'G',xi,'/'
-               else if (xi .lt. 1000) then
-                  write(dirname,'(a,f7.3,a,a)') 'G',xi,'/'
-               else if (xi .lt. 10000) then
-                  write(dirname,'(a,f8.3,a,a)') 'G',xi,'/'
-               endif
+c              Write with correct number of digits
+               write(formstr,'(a,i2,a,i1,a)') '(a,f',npos+ncode+1,
+     $                 '.',ncode,',a)'
+               write(dirname,formstr)  'G',xi,'/'
             endif     
             ip = index(dirname,'/')
             channame = dname(1:i-1)// "/" //dirname(1:ip)
@@ -477,11 +612,13 @@ c
       parameter (sfnum=17)   !Unit number for scratch file
       character*(*) scaled_file
       parameter (scaled_file='events.lhe')
-      integer maxexternal
-      parameter (maxexternal=17)
+      include 'maxparticles.inc'
+      integer    maxexternal
+      parameter (maxexternal=2*max_particles-3)
       include 'run_config.inc'
+      include 'run.inc'
       integer    max_read
-      parameter (max_read = 2000000)
+      parameter (max_read = 5000000)
 c
 c     Arguments
 c
@@ -496,22 +633,32 @@ c
       double precision gsfact
       real xwgt(max_read),xtot
       integer i,j,k,m, ic(7,maxexternal),n
-      double precision scale,aqcd,aqed
-      integer ievent,iseed
+      double precision sscale,aqcd,aqed,tmpsum
+      integer ievent,jseed
       logical done,found
-      character*140 buff
-      character*60 fullname
+      character*1000 buff
+      logical u_syst
+      character*(s_bufflen) s_buff(7)
+      character*300 fullname
+      integer nclus
+      character*(clus_bufflen) buffclus(max_particles)
+      data buffclus/max_particles*' '/
+c
+      double precision bias_weight
+      logical impact_xsec
+      common/bias/bias_weight,impact_xsec
 c
 c     Les Houches init block (for the <init> info)
 c
       integer maxpup
-      parameter(maxpup=100)
+      parameter(maxpup=2)
       integer idbmup,pdfgup,pdfsup,idwtup,nprup,lprup
       double precision ebmup,xsecup,xerrup,xmaxup
       common /heprup/ idbmup(2),ebmup(2),pdfgup(2),pdfsup(2),
      &     idwtup,nprup,xsecup(maxpup),xerrup(maxpup),
      &     xmaxup(maxpup),lprup(maxpup)
       data nprup/0/
+      data xsecup/maxpup*0d0/
 c
 c     external
 c
@@ -519,7 +666,7 @@ c
 c
 c     data
 c
-      data iseed/-1/
+      data jseed/-1/
 c-----
 c  Begin Code
 c-----     
@@ -547,18 +694,21 @@ c
 c     Now loop through events
 c
       do while (.not. done)
-         call read_event(15,P,wgt,n,ic,ievent,scale,aqcd,aqed,buff,done)
+         call read_event(15,P,wgt,n,ic,ievent,sscale,aqcd,aqed,buff,
+     $        u_syst,s_buff,nclus,buffclus,done)
          if (.not. done) then
             revent = revent+1
             wgt = wgt*nj*gsfact                 !symmetry factor * grid factor
-            if (wgt .gt. maxwgt) maxwgt=wgt
-            if (wgt .ge. goal_wgt*xran1(iseed)) then
+            if (dabs(wgt) .gt. maxwgt) maxwgt=dabs(wgt)
+            if (dabs(wgt) .ge. goal_wgt*xran1(jseed)) then
                kevent=kevent+1
-               if (wgt .lt. goal_wgt) wgt = goal_wgt
+               if (dabs(wgt) .lt. goal_wgt) wgt = dsign(goal_wgt,wgt)
                write(sfnum,rec=kevent) wgt,n,
-     &              ((ic(i,j),j=1,maxexternal),i=1,7),ievent,
-     &              ((p(i,j),i=0,4),j=1,maxexternal),scale,aqcd,aqed,buff
-               sum=sum+wgt
+     &           ((ic(m,j),j=1,maxexternal),m=1,7),ievent,
+     &           ((p(m,j),m=0,4),j=1,maxexternal),sscale,aqcd,aqed,
+     &           buff,(s_buff(j),j=1,7),(buffclus(j),j=1,max_particles),
+     &           bias_weight
+               sum=sum+dabs(wgt)
                found=.false.
                do i=1,nprup
                   if(ievent.eq.lprup(i))then
@@ -574,9 +724,10 @@ c
             endif
          endif
          if (kevent .ge. max_read) then
-            write(*,*) 'Error too many events to read in select_events'
-     $           , kevent
-            write(*,*) 'Reset max_read in Source/select_events.f'
+            write(*,*) 'Error too many events to read in combine_events',
+     $           kevent
+            write(*,*) 'Increase cmax_events and max_read in ',
+     $                 'Source/combine_events.f'
             stop
          endif
       enddo
@@ -601,12 +752,10 @@ c     Constants
 c
       character*(*) plist
       parameter (plist='subproc.mg')
-      integer    maxsubprocesses
-      parameter (maxsubprocesses=999)
 c
 c     Arguments
 c
-      character*30 subname(maxsubprocesses)
+      character*300 subname(*)
       integer ns
 c-----
 c  Begin Code
