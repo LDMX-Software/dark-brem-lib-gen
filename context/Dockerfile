@@ -19,11 +19,16 @@ RUN python3 -m pip --no-cache-dir install six numpy
 WORKDIR /output/
 
 COPY . /madgraph
-RUN chmod -R 777 /madgraph/
+
 WORKDIR /madgraph/
+
+RUN chmod -R 777 /madgraph/
+
 RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
     chmod +x makefile bin/*
+
+RUN chmod +x /madgraph/SubProcesses/survey.sh
 
 ENTRYPOINT [ "python3", "/madgraph/db-lib-gen.py" ]
 
