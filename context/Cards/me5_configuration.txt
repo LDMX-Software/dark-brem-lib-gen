@@ -49,15 +49,15 @@
 #!  Default: use the shell default Editor
 #!           or try to find one available on the system
 #!  Be careful: Only shell based editor are allowed
-# text_editor = None
+text_editor = vi 
 
 #! Prefered WebBrower
 #! If None: try to find one available on the system
-# web_browser = None
+web_browser = /bin/true
 
 #! Prefered PS viewer
 #!  If None: try to find one available on the system
-# eps_viewer = None
+eps_viewer = /bin/true
 
 #! Time allowed to answer question (if no answer takes default value)
 #!  0: No time limit
@@ -108,7 +108,7 @@
 
 #! Default Running mode 
 #!  0: single machine/ 1: cluster / 2: multicore
-# run_mode = 2
+run_mode = 2
 
 #! Cluster Type [pbs|sge|condor|lsf|ge|slurm|htcaas|htcaas2] Use for cluster run only
 #!  And cluster queue (or partition for slurm)
@@ -140,7 +140,7 @@
 
 #! Nb_core to use (None = all) This is use only for multicore run
 #!  This correspond also to the number core used for code compilation for cluster mode
-# nb_core = None
+nb_core = None
 
 #! Pythia-PGS Package
 #!  relative path start from main directory

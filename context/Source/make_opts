@@ -1,8 +1,8 @@
 pdlabel1=
 pdlabel2=
 lhapdf=
-PYTHIA8_PATH=/madgraph/MG5_aMC_v3_5_4/HEPTools/pythia8
-MG5AMC_VERSION=3.5.4
+PYTHIA8_PATH=NotInstalled
+MG5AMC_VERSION=3.5.6
 GLOBAL_FLAG=-O
 ALOHA_FLAG=
 MATRIX_FLAG=
@@ -10,8 +10,8 @@ DEFAULT_CPP_COMPILER=g++
 MACFLAG=
 STDLIB=-lstdc++
 STDLIB_FLAG=
-DEFAULT_F_COMPILER=gfortran
 DEFAULT_F2PY_COMPILER=f2py
+DEFAULT_F_COMPILER=gfortran
 #end_of_make_opts_variables
 
 BIASLIBDIR=../../../lib/
