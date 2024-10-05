@@ -12,9 +12,12 @@ RUN apk update &&\
       python3 \
       py3-pip 
 
+# MG5_aMC v3 needs python's following modules 
 RUN python3 -m pip --no-cache-dir install --upgrade pip setuptools wheel 
 RUN python3 -m pip --no-cache-dir install six numpy
-      
+
+WORKDIR /output/
+
 COPY . /madgraph
 RUN chmod 777 /madgraph/
 WORKDIR /madgraph/
@@ -23,5 +26,7 @@ RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     chmod +x makefile bin/*
 
 ENTRYPOINT [ "python3", "/madgraph/db-lib-gen.py" ]
+
+# The following is useful for testing
 #ENTRYPOINT ["/bin/bash", "-l", "-c"]
 #CMD [ "bash", "-l" ]

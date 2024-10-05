@@ -144,11 +144,13 @@ def generate() :
             
     
             prefix = f'{library_name}_{target_opt}_IncidentEnergy_{energy}'
+            # Create the directory if it doesn't exist
+            # os.makedirs(directory, exist_ok=True)
             print(f"Generate events with {energy}")
             subprocess.run(['./bin/generate_events','0',prefix,],check = True)
     
             with gzip.open(f'Events/{prefix}/unweighted_events.lhe.gz','rt') as zipped_lhe :
-                with open(f'{library_dir}/{prefix}/unweighted_events.lhe','w') as lhe :
+                with open(f'{library_dir}/{prefix}_unweighted_events.lhe','w') as lhe :
                     # translate PDGs of 11 to correct lepton PDG just in case we ran with muons
                     content = zipped_lhe.read().replace(' 11 ',f' {lepton["pdg"]} ')
                     lhe.write(content)
