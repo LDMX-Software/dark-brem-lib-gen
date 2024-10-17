@@ -1,6 +1,0 @@
-*       1         1
-   -1    1    5  ELEMASS   ZERO      T        11
-   -2   -1    3  ZERO      AWIDTH    T        22
-*       2         2
-   -1    5    3  ELEMASS   ZERO      S        11
-   -2    1   -1  ZERO      AWIDTH    T        22

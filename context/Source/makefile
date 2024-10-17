@@ -1,86 +1,135 @@
-F77 = gfortran -std=legacy
-#FFLAGS= -O -ffixed-line-length-132
-FFLAGS= -g -ffixed-line-length-132
+# Definitions
+
 LIBDIR= ../lib/
-BINDIR= ../bin/
+BINDIR= ../bin/internal/
 PDFDIR= ./PDF/
+CUTTOOLSDIR= ./CutTools/
+IREGIDIR= ./IREGI/src/
+
+include make_opts
+
+# Source files
 
 PROCESS= hfill.o matrix.o myamp.o 
-
-DSAMPLE = dsample.o ranmar.o 
-
+DSAMPLE = dsample.o ranmar.o DiscreteSampler.o StringCast.o 
 HBOOK = hfill.o hcurve.o hbook1.o hbook2.o
-
-GENERIC = alfas_functions.o transpole.o invarients.o hfill.o pawgraphs.o ran1.o rw_events.o rw_routines.o kin_functions.o open_file.o basecode.o setrun.o run_printout.o dgauss.o
-
-INCLUDEF= coupl.inc genps.inc hbook.inc DECAY/decay.inc psample.inc pmass.inc nexternal.inc cluster.inc
-
-BANNER  =  write_banner.o  rw_events.o ranmar.o  kin_functions.o open_file.o  rw_routines.o alfas_functions.o
-
+GENERIC = $(alfas_functions).o transpole.o invarients.o hfill.o pawgraphs.o ran1.o \
+          rw_events.o rw_routines.o kin_functions.o open_file.o basecode.o setrun.o \
+          run_printout.o dgauss.o readgrid.o getissud.o
+INCLUDEF= coupl.inc genps.inc hbook.inc DECAY/decay.inc psample.inc cluster.inc sudgrid.inc
 COMBINE = combine_events.o  rw_events.o ranmar.o  kin_functions.o open_file.o rw_routines.o alfas_functions.o setrun.o
+GENSUDGRID = gensudgrid.o is-sud.o setrun_gen.o rw_routines.o open_file.o
 
-# $B$ add_def $E$ !this is a tag for add library GENERIC_MW  in MadWeight compilation
+# Locally compiled libraries
 
+LIBRARIES=$(LIBDIR)libdsample.$(libext) $(LIBDIR)libgeneric.$(libext) 
 
-.f.o: ; $(F77) $(FFLAGS) -c $*.f
+# Binaries
 
-# $B$ mod_all $B$ !this is a tag for modify main compilation in MadWeight compilation. Don't edit this line
-all: $(LIBDIR)libdhelas3.a $(LIBDIR)libdsample.a $(LIBDIR)libgeneric.a $(LIBDIR)libpdf.a  $(LIBDIR)libmodel.a
-# $E$ mod_all $E$ !this is a tag for modify main compilation in MadWeight compilation. Don't edit this line
+BINARIES = $(BINDIR)gen_ximprove $(BINDIR)gensudgrid $(BINDIR)combine_runs
 
-scaled.dat:
-	combine_events
+# Compile commands
 
-#$(BINDIR)write_banner:  $(BANNER) 
-#	$(F77) $(FFLAGS) -o write_banner $(BANNER) $(LIBDIR)/libmodel.a $(LIBDIR)/libpdf.a 
-#	mv write_banner $(BINDIR)
+all: $(LIBRARIES) $(LIBDIR)libdhelas.$(libext) $(LIBDIR)libpdf.$(libext) $(LIBDIR)libgammaUPC.$(libext) $(LIBDIR)libmodel.$(libext) $(LIBDIR)libcernlib.$(libext) $(LIBDIR)libbias.$(libext)
 
-#$(BINDIR)scale_events: scale_events.o rw_events.o
-#	$(F77) $(FFLAGS) -o scale_events scale_events.o rw_events.o
-#	mv scale_events $(BINDIR)
+# Libraries
 
-#$(BINDIR)select_events: select_events.o rw_events.o
-#	$(F77) $(FFLAGS) -o select_events select_events.o rw_events.o
-#	mv select_events $(BINDIR)
+$(LIBDIR)libdsample.$(libext): $(DSAMPLE)
+	$(call CREATELIB, $@, $^)
+$(LIBDIR)libgeneric.$(libext): $(GENERIC)
+	$(call CREATELIB, $@, $^)
+$(LIBDIR)libdhelas.$(libext): DHELAS
+	cd DHELAS; make; cd ..
+$(LIBDIR)libpdf.$(libext): PDF make_opts
+	cd PDF; make; cd ..
+ifneq (,$(filter edff chff, $(pdlabel1) $(pdlabel2)))
+$(LIBDIR)libgammaUPC.$(libext): PDF/gammaUPC
+	cd PDF/gammaUPC; make ; cd ../../
+else
+$(LIBDIR)libgammaUPC.$(libext): PDF/gammaUPC
+				cd PDF/gammaUPC; make -f makefile_dummy; cd ../../
+endif	
+$(LIBDIR)libcernlib.$(libext): CERNLIB
+	cd CERNLIB; make; cd ..
+# The bias library is here the dummy by default; compilation of other ones specified in the run_card will be done by MG5aMC directly.
+$(LIBDIR)libbias.$(libext): BIAS/dummy
+	cd BIAS/dummy; make; cd ../../
 
-$(BINDIR)sum_html: sum_html.o 
-	$(F77) $(FFLAGS) -o sum_html sum_html.o   
-	mv sum_html $(BINDIR)
-
-$(LIBDIR)libdhelas3.a: DHELAS
-	cd DHELAS; make
-	ranlib libdhelas3.a
-	mv libdhelas3.a $(LIBDIR)
-
-$(LIBDIR)libdsample.a: $(DSAMPLE)
-	ar cru libdsample.a $(DSAMPLE)
-	ranlib libdsample.a
-	mv libdsample.a $(LIBDIR)
-
-$(LIBDIR)libgeneric.a: $(GENERIC)
-	ar cru libgeneric.a $(GENERIC)
-	ranlib libgeneric.a
-	mv libgeneric.a $(LIBDIR)
+$(LIBDIR)libmodel.$(libext): MODEL param_card.inc
+	cd MODEL; make    
+param_card.inc: ../Cards/param_card.dat
+	../bin/madevent treatcards param
 
 
-$(LIBDIR)libpdf.a: PDF
-	cd PDF; make	
 
-$(LIBDIR)libmodel.a: MODEL
-	cd MODEL; make	
 
-# $B$ add_compile $E$ !this is a tag for add library in MadWeight compilation
+$(BINDIR)gen_ximprove: gen_ximprove.o ranmar.o rw_routines.o open_file.o 
+	$(FC) $(LDFLAGS) -o $@ $^
+#$(BINDIR)combine_events: $(COMBINE) $(LIBDIR)libmodel.$(libext) $(LIBDIR)libpdf.$(libext) $(LIBDIR)libgammaUPC.$(libext) run_card.inc $(LIBDIR)libbias.$(libext)
+#			 $(FC) -o $@ $(COMBINE) -L$(LIBDIR) -lmodel -lpdf -lgammaUPC $(llhapdf) $(LDFLAGS) -lbias
+$(BINDIR)gensudgrid: $(GENSUDGRID) $(LIBDIR)libpdf.$(libext) $(LIBDIR)libgammaUPC.$(libext) $(LIBDIR)libcernlib.$(libext)
+	$(FC) -o $@ $(GENSUDGRID) -L$(LIBDIR) -lmodel -lpdf -lgammaUPC -lcernlib $(llhapdf) $(LDFLAGS)
 
-dsample.o: dsample.f genps.inc
+# Dependencies
 
-genps.inc: nexternal.inc
-	touch genps.inc
+dsample.o: DiscreteSampler.o dsample.f genps.inc StringCast.o
+DiscreteSampler.o: StringCast.o
+invarients.o: invarients.f genps.inc
+setrun.o: setrun.f nexternal.inc leshouche.inc genps.inc
+gen_ximprove.o: gen_ximprove.f run_config.inc run_card.inc
+#combine_events.o: combine_events.f run_config.inc run_card.inc
+combine_runs.o: combine_runs.f run_config.inc run_card.inc
+select_events.o: select_events.f run_config.inc
+setrun.o: setrun.f nexternal.inc leshouche.inc run_card.inc run_config.inc
+rw_events.o: rw_events.f run_config.inc
 
-$(BINDIR)gen_ximprove: gen_ximprove.o ranmar.o rw_routines.o open_file.o
-	$(F77) $(FFLAGS) -o gen_ximprove gen_ximprove.o ranmar.o rw_routines.o open_file.o
-	mv gen_ximprove $(BINDIR)
+run_card.inc: ../Cards/run_card.dat
+	../bin/madevent treatcards run
 
-$(BINDIR)combine_events: $(COMBINE)
-	$(F77) $(FFLAGS) -o combine_events $(COMBINE) $(LIBDIR)/libmodel.a $(LIBDIR)/libpdf.a 
-	mv combine_events $(BINDIR)
+clean4pdf:
+	rm -f ../lib/libpdf.$(libext)
+	rm -f ../lib/libgeneric.$(libext)
+	rm -f ../lib/libgammaUPC.$(libext)
 
+cleanCT:
+	cd $(CUTTOOLSDIR); make clean; cd ..
+
+cleanIR:
+	cd $(IREGIDIR); make clean; cd ..
+
+libiregi: $(LIBDIR)libiregi.a
+
+libcuttools: $(LIBDIR)libcts.a
+
+treatCards:
+	../bin/madevent treatcards all
+
+treatCardsLoopNoInit:
+	../bin/madevent treatcards loop --no_MadLoopInit
+
+libmodel: $(LIBDIR)libmodel.$(libext)
+
+libdhelas: $(LIBDIR)libdhelas.$(libext)
+
+$(LIBDIR)libcts.a: $(CUTTOOLSDIR)
+	cd $(CUTTOOLSDIR); make
+	ln -sf ../Source/$(CUTTOOLSDIR)includects/libcts.a $(LIBDIR)libcts.a
+	ln -sf ../Source/$(CUTTOOLSDIR)includects/mpmodule.mod $(LIBDIR)mpmodule.mod
+
+$(LIBDIR)libiregi.a: $(IREGIDIR)
+	cd $(IREGIDIR); make
+	ln -sf ../Source/$(IREGIDIR)libiregi.a $(LIBDIR)libiregi.a
+
+clean:
+	$(RM) *.o $(LIBRARIES) $(BINARIES)
+	cd PDF; make clean; cd ..
+	cd PDF/gammaUPC; make clean; cd ../../
+	cd DHELAS; make clean; cd ..
+	cd CERNLIB; make clean; cd ..
+	cd MODEL; make clean; cd ..
+	if [ -d RUNNING ]; then cd RUNNING; make clean; cd ..; fi
+	cd BIAS/dummy; make clean; cd ../..
+	cd BIAS/ptj_bias; make clean; cd ../..
+	if [ -d $(CUTTOOLSDIR) ]; then cd $(CUTTOOLSDIR); make clean; cd ..; fi
+	if [ -d $(IREGIDIR) ]; then cd $(IREGIDIR); make clean; cd ..; fi
+	for i in `ls -d ../SubProcesses/P*`; do cd $$i; make clean; cd -; done;

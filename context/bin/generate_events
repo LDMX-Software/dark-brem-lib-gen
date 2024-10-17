@@ -1,270 +1,202 @@
-#!/bin/bash
+#! /usr/bin/env python3
+################################################################################
 #
-#  This runs survey,refine,unweight_events, one after the other
-#  
-#   First we need to get into the main directory
+# Copyright (c) 2011 The MadGraph5_aMC@NLO Development team and Contributors
 #
+# This file is a part of the MadGraph5_aMC@NLO project, an application which 
+# automatically generates Feynman diagrams and matrix elements for arbitrary
+# high-energy processes in the Standard Model and beyond.
 #
-#  Usage: generate_events compression events parallel [name]
+# It is subject to the MadGraph5_aMC@NLO license which should accompany this 
+# distribution.
 #
-
-if [[  ! -d ./bin  ]]; then
-    cd ../
-    if [[ ! -d ./bin ]]; then
-        echo "Error: it must be executed from the main, or bin directory"
-        exit
-    fi
-fi
+# For more information, visit madgraph.phys.ucl.ac.be and amcatnlo.web.cern.ch
 #
-#  Now let shell know where to find important executables
-#
-main=`pwd`
-dirbin=$main/bin
-pydir=$main/../pythia-pgs/src
-pgsdir=$pydir
-ERAdir=$main/../ExRootAnalysis
-MAdir=$main/../MadAnalysis
-webbin=$dirbin
-td=$main/../td
-web=0
+################################################################################
+""" This is the main script in order to generate events in MadEvent """
 
-echo $$ >> myprocid
+import logging
+import logging.config
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
 
-#if ( "$1" == "" ) then
-#    echo 'Number of unweighted events. This is ingnored and read from run_card.dat ' 
-#    set a  = $< 
-#else
-#    set a = $1
-#endif
-if [[  "$1" == ""  ]]; then
-    echo 'Enter 1 for parallel 0 for serial run' 
-     read p 
-else
-     p=$1
-fi
-n=MadEvent
-if [[  $p -gt 0 ]]; then
-   if [[  "$2" == ""  ]]; then
-    echo 'Enter name for jobs on pbs queue'
-       read n
-   else
-       n=$2
-   fi
-   if [[  "$3" == ""  ]]; then
-       echo 'Enter run name'
-       read t
-   else
-       t=$3
-   fi
-else
-   if [[  "$2" == ""  ]]; then
-      echo 'Enter run name'
-      read t
-   else
-      t=$2
-   fi
-fi
-#set t = TeV2
-if [[  "$4" -ne ""  ]]; then
-    web=1
-    webbin="$MADGRAPH_BASE/MG_ME/WebBin"
-    pydir="$webbin/pythia-pgs"
-    pgsdir=$pydir
-    ERAdir="$MADGRAPH_BASE/MG_ME/ExRootAnalysis"
-    MAdir="$MADGRAPH_BASE/MG_ME/MadAnalysis"
-    td="$MADGRAPH_BASE/MG_ME/td"
-    touch Online
-fi
-date
-a=`awk '/^.*=.*nevents/{print $1}' Cards/run_card.dat`
-b=`awk '/^.*=.*gridpack/{print $1}' Cards/run_card.dat`
-echo Generating $a events
-if [[ $b == ".true." ]]; then
-    echo Generating GridPack $b
-fi
-#
-#  Check if run already exists. If so, store run w/ new name
-#  and remove old run before starting.
-#
+root_path = os.path.split(os.path.dirname(os.path.realpath( __file__ )))[0]
+pjoin = os.path.join
 
-if [[  -e status  ]]; then
-  rm status
-fi
-if [[  -e error  ]]; then
-  rm error
-fi
-touch RunWeb
-echo "Cleaning directories" > status
-$dirbin/gen_crossxhtml-pl $t
-$dirbin/clean
-touch survey
-echo "Starting jobs" > status
-$dirbin/gen_crossxhtml-pl $t
-$dirbin/survey $p $n $t
-if [[  -e error  ]]; then
-  cat error
-  date
-  cp -f error status
-  rm survey
-  rm RunWeb
-  $dirbin/gen_crossxhtml-pl $t
-  $dirbin/gen_cardhtml-pl
-  exit
-fi
-if [[ $b != ".true." ]]; then
-   mv survey refine
-   $dirbin/refine $a $p $n 5 $t
-   #$dirbin/refine 0.01 $p $n
-   mv refine refine2
-   $dirbin/refine $a $p $n 1 $t
-   rm -f refine2
-else
-   rm survey
-fi
-#
-#  Now collect the events
-#
-echo "Combining Events" >& status
-echo "Combining Events" 
-$dirbin/gen_crossxhtml-pl $t
-pushd ./Source > /dev/null
-make ../bin/combine_events
-popd > /dev/null
-pushd SubProcesses > /dev/null
-$dirbin/run_combine $p
-#$dirbin/addvertex.pl unweighted_events.lhe unweighted_events_V.lhe 622 1.0
-mv events.lhe ../Events/
-mv unweighted_events.lhe ../Events/
-#rm unweighted_events.lhe
-#mv unweighted_events_V.lhe ../Events/unweighted_events.lhe
-popd > /dev/null
-#
-#  do the banner
-#
-cd ./Events
-echo "putting the banner"
-$dirbin/put_banner events.lhe
-$dirbin/put_banner unweighted_events.lhe
+if sys.version_info < (3, 7):
+    sys.exit('MadEvent works with python 3.7 or higher.\n\
+               Please upgrade your version of python.')
 
-#if [[ -e ../Cards/replace_card.dat ]];then
-#    $dirbin/replace.pl unweighted_events.lhe temp.lhe < ../Cards/replace_card.dat
-#    if [[ -e temp.lhe ]];then
-#	mv -f temp.lhe unweighted_events.lhe
-#    fi
-#fi
-
-#
-#  Create root file
-#
+try:
+    import six
+except ImportError:
+    message = 'madgraph requires the six module. The easiest way to install it is to run "pip install six --user"\n'
+    message += 'in case of problem with pip, you can download the file at https://pypi.org/project/six/ . It has a single python file that you just need to put inside a directory of your $PYTHONPATH environment variable.'
+    sys.exit(message)
+    
+# Check if optimize mode is (and should be) activated
+if __debug__ and (not os.path.exists(pjoin(root_path,'../..', 'bin','create_release.py'))):
+    subprocess.call([sys.executable] + ['-O'] + sys.argv)
+    sys.exit()
 
 
-if [[ (-x $ERAdir/ExRootLHEFConverter) && (-e unweighted_events.lhe) ]]; then
-    echo "Creating Root File" >& ../status
-    $dirbin/gen_crossxhtml-pl $t
-    $ERAdir/ExRootLHEFConverter unweighted_events.lhe unweighted_events.root
-fi
+sys.path.append(pjoin(root_path,'bin','internal'))
+import madevent_interface as ME        
 
-#if ((-x $ERAdir/ExRootMain) && (-e unweighted_events.root) && (-e ../Cards/plot_card.dat)) then
-#    echo "Creating Root Plots" >& ../status
-#    $dirbin/gen_crossxhtml-pl $t
-#    mkdir $t
-#    cd $t
-#    echo "../unweighted_events.root" > events.list
-#    $dirbin/plot $ERAdir > plot.log
-#    cd ..
-#    $dirbin/plot_page-pl $t
-#endif
-if [[ (-x $MAdir/plot_events) && (-e unweighted_events.lhe) && (-e ../Cards/plot_card.dat) ]]; then
-    echo "Creating Plots" >& ../status
-    $dirbin/gen_crossxhtml-pl $t
-    mkdir $t
-    cd $t
-    echo "../unweighted_events.lhe" > events.list
-    $dirbin/plot $MAdir $td > plot.log
-    cd ..
-    $dirbin/plot_page-pl $t
-fi
 
-$dirbin/store $t
-$dirbin/gen_crossxhtml-pl $t
+import logging
+import logging.config
 
-if [[ $b == ".true." ]]; then
-   cd ../
-   sed -i.bak "s/\s*.false.*=.*GridRun/  .true.  =  GridRun/g" Cards/grid_card.dat
-   $dirbin/restore_data $t
-   $dirbin/store4grid default
-   $dirbin/clean
-   make gridpack.tar.gz
-   cd Events
-fi
+try: 
+    import readline
+except ImportError:
+    try:
+        import pyreadline as readline
+    except:
+        print("For tab completion and history, install module readline.")
+else:
+    import rlcompleter
 
-#
-#  Run Pythia and PGS on events
-#
+    if 'r261:67515' in sys.version and  'GCC 4.2.1 (Apple Inc. build 5646)' in sys.version:
+        readline.parse_and_bind("bind ^I rl_complete")
+        readline.__doc__ = 'libedit'  
+    
+    elif hasattr(readline, '__doc__'):
+        if 'libedit' not in readline.__doc__:
+            readline.parse_and_bind("tab: complete")
+        else:
+            readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.__doc__ = 'GNU'
+        readline.parse_and_bind("tab: complete")
 
-# Compile pythia if not there
-if [[ !(-x $pydir/pythia) && (-d $pydir) && (-e ../Cards/pythia_card.dat) ]]; then
-    pushd $pydir > /dev/null
-    echo "No pythia executable - running make"
-    make
-    popd > /dev/null
-fi
+    # charge history file
+    try:
+        legacy_state_dir = os.path.join(os.environ['HOME'], '.mg5')
 
-if [[ (-x $pydir/pythia) && (-e ../Cards/pythia_card.dat) ]]; then
-    gunzip -c ${t}_unweighted_events.lhe.gz > unweighted_events.lhe
-    echo "Running Pythia" >& ../status
-    $dirbin/gen_crossxhtml-pl $t
-# shower and hadronize event through Pythia
-    echo "Running pythia..."
-#    qsub -v pydir=$pydir $dirbin/run_pythia >> ../running_jobs
-    $dirbin/run_pythia $pydir $p  
-fi
+        if os.path.exists(legacy_state_dir):
+            state_dir = legacy_state_dir
+        else:
+            state_dir = os.getenv('XDG_STATE_HOME', os.path.join(os.environ['HOME'], '.local', 'state'))
 
-if [[ (-x $pydir/hep2lhe) && (-e ../Cards/pythia_card.dat) && (-e pythia_events.hep) ]]; then
-    echo "Creating Pythia LHE File" >& ../status
-    $dirbin/gen_crossxhtml-pl $t
-    $dirbin/run_hep2lhe $pydir $p  
-fi
+        history_file = os.path.join(state_dir, "me5history")
+        readline.read_history_file(history_file)
 
-if [[ (-x $ERAdir/ExRootLHEFConverter) && (-e pythia_events.lhe) ]]; then
-    echo "Creating Pythia LHE Root File" >& ../status
-    $dirbin/gen_crossxhtml-pl $t
-    $ERAdir/ExRootLHEFConverter pythia_events.lhe pythia_lhe_events.root
-fi
+    except:
+        pass
 
-# Compile pgs if not there
-if [[ !(-x $pgsdir/pgs) && (-d $pgsdir) && (-e ../Cards/pgs_card.dat) ]]; then
-    pushd $pgsdir > /dev/null
-    echo "No pgs executable - running make"
-    make
-    popd > /dev/null
-fi
+try:
+   import psyco
+   psyco.full()
+except:
+   pass
 
-if [[ (-x $pgsdir/pgs) && (-e ../Cards/pgs_card.dat) ]]; then
-    echo "Running PGS" >& ../status
-    $dirbin/gen_crossxhtml-pl $t
-    # now pass the event to a detector simulator and reconstruct objects
-    echo "Running PGS..."
-#    qsub -v pgsdir=$pgsdir $dirbin/run_pgs >> ../running_jobs
-    $dirbin/run_pgs $pgsdir $p
-fi
-#
+if __debug__:
+        print('Running MG5 in debug mode')
 
-if [[ (-x $ERAdir/ExRootLHCOlympicsConverter) && (-e pgs_events.lhco) ]]; then
-    echo "Creating PGS Root File" >& ../status
-    $dirbin/gen_crossxhtml-pl $t
-    $ERAdir/ExRootLHCOlympicsConverter pgs_events.lhco pgs_events.root
-fi
 
-cd ../
-#
-#  Store Events
-#
-echo "Storing Events" >& status
-$dirbin/gen_crossxhtml-pl $t
-$dirbin/store $t
-rm -f RunWeb
-echo " " >& status
-$dirbin/gen_crossxhtml-pl $t
-$dirbin/gen_cardhtml-pl
-date
+
+def set_configuration():
+    import coloring_logging
+    logging.config.fileConfig(os.path.join(root_path, 'bin', 'internal', 'me5_logging.conf'))
+    logging.root.setLevel(logging.INFO)
+    logging.getLogger('madevent').setLevel(logging.INFO)
+    logging.getLogger('madgraph').setLevel(logging.INFO)    
+
+
+def treat_old_argument(argument):
+    """Have the MG4 behavior for this script"""
+
+    try:
+        mode = int(argument[1])
+    except:
+        mode = int(six.moves.input('Enter 2 for multi-core, 1 for parallel, 0 for serial run\n'))
+    if mode == 0:
+        try:
+            name = argument[2]
+        except:
+            name = six.moves.input('Enter run name\n')
+    else:
+        try:
+            opt = argument[2]
+        except:
+            if mode == 1: 
+                opt = six.moves.input('Enter name for jobs on pbs queue\n')
+            else:
+                opt = int(six.moves.input('Enter number of cores\n'))
+        
+        try:
+            name = argument[3]
+        except:
+            name = six.moves.input('enter run name\n')
+
+#    launch = ME.MadEventCmd(me_dir=root_path)
+        
+
+    if mode == 1:
+        argument = ['fake','-f', str(name), '--cluster']
+    elif mode == 2:
+        argument = ['fake','-f', '--multicore', str(name), '--nb_core=%s' % opt]
+    else:
+        argument = ['fake','-f', name, '--nb_core=1']
+
+    return argument
+
+
+
+
+
+
+
+################################################################################  
+##   EXECUTABLE
+################################################################################
+
+if '__main__' == __name__:
+    # Check that python version is valid
+
+    set_configuration()
+    argument = sys.argv    
+    try:
+        if '-h' in argument or '--help' in argument:
+            launch = ME.MadEventCmdShell(me_dir=root_path, force_run=True)
+            launch.exec_cmd('help generate_events')
+            sys.exit()
+        elif len(argument) > 1 and argument[1] in ['0', '1', '2']:
+            argument = treat_old_argument(argument)
+        
+        with ME.MadEventCmdShell.RunWebHandling(root_path, ):
+            launch = ME.MadEventCmdShell(me_dir=root_path, force_run=True)
+            launch.run_cmd('generate_events %s' % ' '.join(argument[1:]))
+            launch.run_cmd('quit')
+    except ME.MadEventAlreadyRunning as message:
+        logging.getLogger('madgraph').log(40, str(message))
+        sys.exit(1)
+    except KeyboardInterrupt:
+        try:
+            launch.run_cmd('quit')
+        except:
+            pass
+    except Exception as error:
+        logging.error(str(error))
+        sys.exit()
+            
+    # reconfigure path for the web 
+    #if len(argument) == 5:
+    #    ME.pass_in_web_mode()
+
+             
+        
+
+        
+    
+    
+    
+    
+    
+    
+    

@@ -8,37 +8,32 @@ c 3. cuts
 c---------------------------------------------------------------------- 
       implicit none
 c
-c     parameters
+c     include
 c
-      integer maxpara
-      parameter (maxpara=1000)
+      include 'genps.inc'
+      include 'run_config.inc'
+      include 'PDF/pdf.inc'
+      include 'run.inc'
+      include 'alfas.inc'
+      include 'MODEL/coupl.inc'
+
+      double precision D
+      common/to_dj/D
+c
+c     PARAM_CARD
+c
+      character*30 param_card_name
+      common/to_param_card_name/param_card_name
 c
 c     local
 c     
       integer npara
       character*20 param(maxpara),value(maxpara)
-c
-c     include
-c
-      include 'genps.inc'
-      include 'PDF/pdf.inc'
-      include 'run.inc'
-      include 'alfas.inc'
-      include 'MODEL/coupl.inc'
-c
-c     local
-c
       character*20 ctemp
       integer k,i,l1,l2
       character*132 buff
       real*8 sf1,sf2
-      integer lp1,lp2
-      real*8 eb1,eb2
       real*8 pb1,pb2
-      
-c     NATALIA ADDED
-      real*8 mb1,mb2
-
 C
 C     input cuts
 C
@@ -61,17 +56,17 @@ c
      &     xmaxup(maxpup),lprup(maxpup)
 c
       include 'nexternal.inc'
-      integer    maxflow
-      parameter (maxflow=999)
-      integer idup(nexternal,maxproc)
-      integer mothup(2,nexternal,maxproc)
-      integer icolup(2,nexternal,maxflow)
+      include 'maxamps.inc'
+      integer idup(nexternal,maxproc,maxsproc)
+      integer mothup(2,nexternal)
+      integer icolup(2,nexternal,maxflow,maxsproc)
       include 'leshouche.inc'
+      data pdfwgt/.false./
 c
 c
 c
       logical gridrun,gridpack
-      integer          iseed
+      integer*8          iseed
       common /to_seed/ iseed
 c
 c----------
@@ -80,308 +75,66 @@ c----------
 c
 c     read the run_card.dat
 c
-      call load_para(npara,param,value)
+      include 'run_card.inc'
 
-c*********************************************************************
-c max jet flavor                                                     *
-c*********************************************************************
-
-      call  get_integer (npara,param,value,"maxjetflavor",maxjetflavor,4)
-
-c*********************************************************************
-c     Fixed-Target Cuts                                              *
-c*********************************************************************
-
-      call get_real   (npara,param,value,"ef "       , ef        , 0d0)
-      call get_real   (npara,param,value,"thetafmin ", thetafmin , 0d0)
-      call get_real   (npara,param,value,"thetaxfmin ", thetaxfmin, 0d0)
-      call get_real   (npara,param,value,"thetayfmin ", thetayfmin, 0d0)
-      call get_real   (npara,param,value,"xthetaxfmin ",xthetaxfmin, 0d0)
-      call get_real   (npara,param,value,"xthetayfmin ",xthetayfmin, 0d0)
-      call get_real   (npara,param,value,"efmax "    , efmax   , 100d0)
-      call get_real   (npara,param,value,"thetafmax ", thetafmax, 100d0)
-      call get_real   (npara,param,value,"thetaxfmax ", thetaxfmax,100d0)
-      call get_real   (npara,param,value,"thetayfmax ", thetayfmax,100d0)
-      call get_real   (npara,param,value,"xthetaxfmax ",xthetaxfmax,100d0)
-      call get_real   (npara,param,value,"xthetayfmax ",xthetayfmax,100d0)
-      call get_real   (npara,param,value,"mmff "     , mmff      , 0d0)
-      call get_real   (npara,param,value,"mmffmax " , mmffmax  , 1000d0)
-      call get_real   (npara,param,value,"xef "      , xef       , 0d0)
-      call get_real   (npara,param,value,"xthetaf "  , xthetaf   , 0d0)
-      call get_real   (npara,param,value,"eftot"    , efTot     , 0d0)
-      call get_real   (npara,param,value,"efrat"    , efRat     , 0d0)
-
-
-c*********************************************************************
-c     Minimum pt's                                                   *
-c*********************************************************************
-
-      call get_real   (npara,param,value," ptj    ",ptj,20d0)
-      call get_real   (npara,param,value," ptb    ",ptb,20d0)
-      call get_real   (npara,param,value," pta    ",pta,20d0)
-      call get_real   (npara,param,value," ptl    ",ptl,20d0)
-c      call get_real   (npara,param,value," ptf    ",ptf,1d-2)
-      call get_real   (npara,param,value," misset ",misset,0d0)
-      call get_real   (npara,param,value," ptonium ",ptonium,0d0)
-
-c*********************************************************************
-c     Maximum pt's                                                   *
-c*********************************************************************
-
-      call get_real   (npara,param,value," ptjmax ",ptjmax,1d5)
-      call get_real   (npara,param,value," ptbmax ",ptbmax,1d5)
-      call get_real   (npara,param,value," ptamax ",ptamax,1d5)
-      call get_real   (npara,param,value," ptlmax ",ptlmax,1d5)
-      call get_real   (npara,param,value," missetmax ",missetmax,1d5)
-
-c*********************************************************************
-c     Maximum rapidity (absolute value)                              *
-c*********************************************************************
-
-      call get_real   (npara,param,value," etaj ",etaj,4d0)
-      call get_real   (npara,param,value," etab ",etab,4d0)
-      call get_real   (npara,param,value," etaa ",etaa,4d0)
-      call get_real   (npara,param,value," etal ",etal,4d0)
-      call get_real   (npara,param,value," etaonium ",etaonium,1d2)
-
-c*********************************************************************
-c     Minimum rapidity (absolute value)                              *
-c*********************************************************************
-
-      call get_real   (npara,param,value," etajmin ",etajmin,0d0)
-      call get_real   (npara,param,value," etabmin ",etabmin,0d0)
-      call get_real   (npara,param,value," etaamin ",etaamin,0d0)
-      call get_real   (npara,param,value," etalmin ",etalmin,0d0)
-
-c*********************************************************************
-c     Minimum E's                                                   *
-c*********************************************************************
-
-      call get_real   (npara,param,value," ej ", ej, 0d0)
-      call get_real   (npara,param,value," eb ", eb, 0d0)
-      call get_real   (npara,param,value," ea ", ea, 0d0)
-      call get_real   (npara,param,value," el ", el, 0d0)
-
-
-c*********************************************************************
-c     Maximum E's                                                    *
-c*********************************************************************
-
-      call get_real   (npara,param,value," ejmax ", ejmax, 1d5)
-      call get_real   (npara,param,value," ebmax ", ebmax, 1d5)
-      call get_real   (npara,param,value," eamax ", eamax, 1d5)
-      call get_real   (npara,param,value," elmax ", elmax, 1d5)
-
-c*********************************************************************
-c     Minimum DeltaR distance                                        *
-c*********************************************************************
-
-      call get_real   (npara,param,value," drjj ",drjj,0.4d0)
-      call get_real   (npara,param,value," drbb ",drbb,0.4d0)
-      call get_real   (npara,param,value," drll ",drll,0.4d0)
-      call get_real   (npara,param,value," draa ",draa,0.4d0)
-      call get_real   (npara,param,value," drbj ",drbj,0.4d0)
-      call get_real   (npara,param,value," draj ",draj,0.4d0)
-      call get_real   (npara,param,value," drjl ",drjl,0.4d0)
-      call get_real   (npara,param,value," drab ",drab,0.4d0)
-      call get_real   (npara,param,value," drbl ",drbl,0.4d0)
-      call get_real   (npara,param,value," dral ",dral,0.4d0)
-
-c*********************************************************************
-c     Maximum DeltaR distance                                        *
-c*********************************************************************
-
-      call get_real   (npara,param,value," drjjmax ",drjjmax,1d2)
-      call get_real   (npara,param,value," drbbmax ",drbbmax,1d2)
-      call get_real   (npara,param,value," drllmax ",drllmax,1d2)
-      call get_real   (npara,param,value," draamax ",draamax,1d2)
-      call get_real   (npara,param,value," drbjmax ",drbjmax,1d2)
-      call get_real   (npara,param,value," drajmax ",drajmax,1d2)
-      call get_real   (npara,param,value," drjlmax ",drjlmax,1d2)
-      call get_real   (npara,param,value," drabmax ",drabmax,1d2)
-      call get_real   (npara,param,value," drblmax ",drblmax,1d2)
-      call get_real   (npara,param,value," dralmax ",dralmax,1d2)
-
-c*********************************************************************
-c     Minimum invariant mass for pairs                               *
-c*********************************************************************
-
-      call get_real   (npara,param,value," mmjj ",mmjj,0d0)
-      call get_real   (npara,param,value," mmbb ",mmbb,0d0)
-      call get_real   (npara,param,value," mmaa ",mmaa,0d0)
-      call get_real   (npara,param,value," mmll ",mmll,0d0)
-
-c*********************************************************************
-c     Maximum invariant mass for pairs                               *
-c*********************************************************************
-
-      call get_real   (npara,param,value," mmjjmax ",mmjjmax,1d5)
-      call get_real   (npara,param,value," mmbbmax ",mmbbmax,1d5)
-      call get_real   (npara,param,value," mmaamax ",mmaamax,1d5)
-      call get_real   (npara,param,value," mmllmax ",mmllmax,1d5)
-
-c*********************************************************************
-c     Min Maxi invariant mass for all leptons                        *
-c*********************************************************************
-
-      call get_real   (npara,param,value," mmnl    ",mmnl   ,0d0)
-      call get_real   (npara,param,value," mmnlmax ",mmnlmax,1d5)
-
-c*********************************************************************
-c     Inclusive cuts                                                 *
-c*********************************************************************
-
-      call get_real   (npara,param,value," xptj ",xptj,0d0)
-      call get_real   (npara,param,value," xptb ",xptb,0d0)
-      call get_real   (npara,param,value," xpta ",xpta,0d0)
-      call get_real   (npara,param,value," xptl ",xptl,0d0)
-
-c*********************************************************************
-c     WBF cuts                                                       *
-c*********************************************************************
-
-      call get_real   (npara,param,value," xetamin ",xetamin,0d0)
-      call get_real   (npara,param,value," deltaeta",deltaeta,0d0)
-
-c*********************************************************************
-c     Jet measure cuts                                               *
-c*********************************************************************
-
-      call get_real   (npara,param,value," xqcut ",xqcut,0d0)
-
-c*********************************************************************
-c Set min pt of one heavy particle                                   *
-c*********************************************************************
-
- 	call get_real   (npara,param,value,"ptheavy",ptheavy,0d0)
-
-c*********************************************************************
-c Check   the pt's of the jets sorted by pt                          *
-c*********************************************************************
-
- 	call get_real   (npara,param,value,"ptj1min",ptj1min,0d0)
- 	call get_real   (npara,param,value,"ptj1max",ptj1max,1d5)
- 	call get_real   (npara,param,value,"ptj2min",ptj2min,0d0)
- 	call get_real   (npara,param,value,"ptj2max",ptj2max,1d5)
- 	call get_real   (npara,param,value,"ptj3min",ptj3min,0d0)
- 	call get_real   (npara,param,value,"ptj3max",ptj3max,1d5)
- 	call get_real   (npara,param,value,"ptj4min",ptj4min,0d0)
- 	call get_real   (npara,param,value,"ptj4max",ptj4max,1d5)
-	call get_real   (npara,param,value,"cutuse",cutuse,0d0)
-
-c*********************************************************************
-c Check  Ht                                                          *
-c*********************************************************************
-
-	call get_real   (npara,param,value,"ht2min",ht2min,0d0)
-	call get_real   (npara,param,value,"ht3min",ht3min,0d0)
-	call get_real   (npara,param,value,"ht4min",ht4min,0d0)
-	call get_real   (npara,param,value,"ht2max",ht2max,1d5)
-	call get_real   (npara,param,value,"ht3max",ht3max,1d5)
-	call get_real   (npara,param,value,"ht4max",ht4max,1d5)
-
-	call get_real   (npara,param,value,"htjmin",htjmin,0d0)
-	call get_real   (npara,param,value,"htjmax",htjmax,1d5)
-
-c*********************************************************************
-c     Random Number Seed                                             *
-c*********************************************************************
-
-      call get_logical   (npara,param,value," gridrun ",gridrun,.false.)
-      call get_logical   (npara,param,value," gridpack ",gridpack,.false.)
-      if (gridrun.and.gridpack)then
-         call get_integer   (npara,param,value," gseed ",iseed,0)
-      else 
-         call get_integer (npara,param,value," iseed ",iseed,0)
-      endif
-
-c************************************************************************     
-c     Renormalization and factorization scales                          *
-c************************************************************************     
-c
-c     If the following flags to .false. then event-by-event
-c     scale choice is requested. In this case edit the 
-c     user subroutines set_ren_scale and set_fac_scale in setpara.f
-
-      call get_logical(npara,param,value," fixed_ren_scale ",fixed_ren_scale,.true.)
-      call get_logical(npara,param,value," fixed_fac_scale ",fixed_fac_scale,.true.)
-      call get_real   (npara,param,value," scale "          ,scale,91.188d0)
-      call get_real   (npara,param,value," dsqrt_q2fact1 "  ,sf1  ,91.188d0)
-      call get_real   (npara,param,value," dsqrt_q2fact2 "  ,sf2  ,91.188d0)
+c     if no matching ensure that no pdfreweight are done
+      if (ickkw.eq.0) pdfwgt = .false.
 
       q2fact(1) = sf1**2      ! fact scale**2 for pdf1
       q2fact(2) = sf2**2      ! fact scale**2 for pdf2     
 
-      call get_real   (npara,param,value," scalefact "      ,scalefact, 1d0)
-      call get_logical(npara,param,value," fixed_couplings ",fixed_couplings,.true.)
-      call get_integer(npara,param,value," ickkw "          ,ickkw    , 0  )
-
-      if(ickkw.gt.0)then
-         call get_real   (npara,param,value," alpsfact "       ,alpsfact , 1d0)
-         call get_logical(npara,param,value," highestmult "    ,hmult, .false.)
+      if(pb1.ne.0d0)then
+         if (abs(lpp(1)).eq.1.or.abs(lpp(1)).eq.2)then
+            write(*,*) 'proton/anti-proton beam polarization are not allowed'
+            stop 1
+         endif
+         pol(1)=sign(1+abs(pb1)/100d0,pb1)
+      endif
+      if(pb2.ne.0d0)then
+         if (abs(lpp(2)).eq.1.or.abs(lpp(2)).eq.2)then
+            write(*,*) 'proton/anti-proton beam polarization are not allowed'
+            stop 1
+         endif
+         pol(2)=sign(1+abs(pb2)/100d0,pb2)
       endif
 
-c************************************************************************     
-c    Collider energy and type                                           *
-c************************************************************************     
-c     lpp  = -1 (antiproton), 0 (no pdf), 1 (proton)
-c     lpp  =  2 (proton emitting a photon without breaking)
-c     lpp  =  3 (electron emitting a photon)
-c     ebeam= energy of each beam in GeV
-
-      call get_integer(npara,param,value," lpp1 "   ,lp1,1  )
-      call get_integer(npara,param,value," lpp2 "   ,lp2,1  )
-      call get_real   (npara,param,value," ebeam1 " ,eb1,7d3)
-      call get_real   (npara,param,value," ebeam2 " ,eb2,7d3)
-      call get_real   (npara,param,value," mbeam1 " ,mb1,0d0)
-      call get_real   (npara,param,value," mbeam2 " ,mb2,0d0)
-     
-      lpp(1)=lp1
-      lpp(2)=lp2
-      ebeam(1)=eb1
-      ebeam(2)=eb2
-
-c...NATALIA ADDED THESE
-      mbeam(1)=mb1
-      mbeam(2)=mb2
-
-c************************************************************************     
-c    Beam polarization
-c************************************************************************     
-      call get_real   (npara,param,value," polbeam1 " ,pb1,0d0)
-      call get_real   (npara,param,value," polbeam2 " ,pb2,0d0)
-
-      if(pb1.ne.0d0.and.lp1.eq.0) pol(1)=sign(1+abs(pb1)/100d0,pb1)
-      if(pb2.ne.0d0.and.lp2.eq.0) pol(2)=sign(1+abs(pb2)/100d0,pb2)
+      
+      if(pb1.ne.0d0.and.lpp(1).eq.0) pol(1)=sign(1+abs(pb1)/100d0,pb1)
+      if(pb2.ne.0d0.and.lpp(2).eq.0) pol(2)=sign(1+abs(pb2)/100d0,pb2)
 
       if(pb1.ne.0.or.pb2.ne.0) write(*,*) 'Setting beam polarization ',
      $     sign((abs(pol(1))-1)*100,pol(1)),
      $     sign((abs(pol(2))-1)*100,pol(2))
 
-c************************************************************************     
-c    BW cutoff (M+/-bwcutoff*Gamma)
-c************************************************************************     
-      call get_real   (npara,param,value," bwcutoff " ,bwcutoff,15d0)
 
-c************************************************************************     
-c    Collider pdf                                                       *
-c************************************************************************     
-
-      call get_string (npara,param,value," pdlabel ",pdlabel,'cteq6l1')
+      if(pdlabel.eq.'eva') then
+            ! pbX=-100 (pure LH beam) => fLpol=1.0 (in eva)
+            ! pbX=0    (RH + LH beam) => fLpol=0.5 (in eva)
+            ! pbX=+100 (pure RH beam) => fLpol=0.0 (in eva)
+            pol(1) = (-1d0/200d0)*pb1 + 0.5d0
+            pol(2) = (-1d0/200d0)*pb2 + 0.5d0
+      else
+            if(pdsublabel(1).eq.'eva') then
+                  pol(1) = (-1d0/200d0)*pb1 + 0.5d0
+            endif
+            if(pdsublabel(2).eq.'eva') then
+                  pol(2) = (-1d0/200d0)*pb2 + 0.5d0
+            endif
+      endif
 
 c !!! Default behavior changed (MH, Aug. 07) !!!
 c If no pdf, read the param_card and use the value from there and
 c order of alfas running = 2
 
-      if(lp1.ne.0.or.lp2.ne.0) then
+      if(lpp(1).ne.0.or.lpp(2).ne.0) then
           write(*,*) 'A PDF is used, so alpha_s(MZ) is going to be modified'
-          call setpara('param_card.dat',.true.)
+          call setpara(param_card_name)
           asmz=G**2/(16d0*atan(1d0))
           write(*,*) 'Old value of alpha_s from param_card: ',asmz
           call pdfwrap
           write(*,*) 'New value of alpha_s from PDF ',pdlabel,':',asmz
       else
-          call setpara('param_card.dat',.true.)
+          call setpara(param_card_name)
           asmz=G**2/(16d0*atan(1d0))
           nloop=2
           pdlabel='none'
@@ -391,24 +144,55 @@ c order of alfas running = 2
       endif
 c !!! end of modification !!!
 
+C     If use_syst, ensure that all variational parameters are 1
+c           In principle this should be always the case since the
+c           banner.py is expected to correct such wrong run_card.
+      if(use_syst)then
+c         if(scalefact.ne.1)then
+c            write(*,*) 'Warning: use_syst=T, setting scalefact to 1'
+c            scalefact=1
+c         endif
+         if(alpsfact.ne.1)then
+            write(*,*) 'Warning: use_syst=T, setting alpsfact to 1'
+            alpsfact=1
+         endif
+      endif
+
 C       Fill common block for Les Houches init info
       do i=1,2
         if(lpp(i).eq.1.or.lpp(i).eq.2) then
-          idbmup(i)=2212
+          if (nb_proton(i).eq.1.and.nb_neutron(i).eq.0) then
+              idbmup(i)=2212
+          elseif (nb_proton(i).eq.0.and.nb_neutron(i).eq.1) then
+              idbmup(i)=2112
+          else
+              idbmup(i) = 1000000000 + (nb_proton(i)+nb_neutron(i))*10
+     $                               + nb_proton(i)*10000
+          endif
         elseif(lpp(i).eq.-1.or.lpp(i).eq.-2) then
-          idbmup(i)=-2212
+          if (nb_proton(i).eq.1.and.nb_neutron(i).eq.0) then
+              idbmup(i)=-2212
+          else
+              idbmup(i) = -1*(1000000000 + (nb_proton(i)+nb_neutron(i))*10
+     $                                    + nb_proton(i)*10000)
+          endif
         elseif(lpp(i).eq.3) then
           idbmup(i)=11
         elseif(lpp(i).eq.-3) then
           idbmup(i)=-11
+        elseif(lpp(i).eq.4) then
+            idbmup(i)=13
+        elseif(lpp(i).eq.-4) then
+            idbmup(i)=-13
         elseif(lpp(i).eq.0) then
-          idbmup(i)=idup(i,1)
+          idbmup(i)=idup(i,1,1)
         else
           idbmup(i)=lpp(i)
         endif
-        ebmup(i)=ebeam(i)
       enddo
-      call get_pdfup(pdlabel,pdfgup,pdfsup)
+      ebmup(1)=ebeam(1)
+      ebmup(2)=ebeam(2)
+      call get_pdfup(pdlabel,pdfgup,pdfsup,lhaid)
 
       return
  99   write(*,*) 'error in reading'
@@ -420,17 +204,22 @@ C   GET_PDFUP
 C   Convert MadEvent pdf name to LHAPDF number
 C-------------------------------------------------
 
-      subroutine get_pdfup(pdfin,pdfgup,pdfsup)
+      subroutine get_pdfup(pdfin,pdfgup,pdfsup,lhaid)
       implicit none
 
       character*(*) pdfin
       integer mpdf
-      integer npdfs,i,pdfgup(2),pdfsup(2)
+      integer npdfs,i,pdfgup(2),pdfsup(2),lhaid
 
-      parameter (npdfs=13)
+      parameter (npdfs=21)
       character*7 pdflabs(npdfs)
       data pdflabs/
      $   'none',
+     $   'eva',
+     $   'iww',
+     $   'edff',
+     $   'chff',
+     $     'dressed', 
      $   'mrs02nl',
      $   'mrs02nn',
      $   'cteq4_m',
@@ -442,9 +231,17 @@ C-------------------------------------------------
      $   'cteq5m1',
      $   'cteq6_m',
      $   'cteq6_l',
-     $   'cteq6l1'/
+     $   'cteq6l1',     
+     $   'nn23lo',
+     $   'nn23lo1',
+     $   'nn23nlo'/
       integer numspdf(npdfs)
       data numspdf/
+     $   00000,
+     $   00000,
+     $   00000,
+     $   00000,
+     $   00000,
      $   00000,
      $   20250,
      $   20270,
@@ -457,7 +254,21 @@ C-------------------------------------------------
      $   19051,
      $   10000,
      $   10041,
-     $   10042/
+     $   10042,
+     $   246800,
+     $   247000,
+     $   244800/
+
+
+      if(pdfin.eq."lhapdf") then
+        write(*,*)'using LHAPDF'
+        do i=1,2
+           pdfgup(i)=0
+           pdfsup(i)=lhaid
+        enddo
+        return
+      endif
+
       
       mpdf=-1
       do i=1,npdfs

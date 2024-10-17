@@ -9,78 +9,57 @@ c
       integer lun
       logical fopened
       character*(*) filename
-      character*30  tempname
-      integer fine
-      integer dirup
+      character*300  tempname
+      character*300  tempname2
+      character*300 path ! path of the executable
+      character*30  upname ! sequence of ../
+      integer fine,fine2
+      integer i, pos
       
 c-----
 c  Begin Code
 c-----
+c      
+c     getting the path of the executable
+c
+      call getarg(0,path) !path is the PATH to the madevent executable (either global or from launching directory)
+      pos = index(path,'/',.true.)
+      path = path(:pos)
 c
 c     first check that we will end in the main directory
 c
-      tempname=filename
-      fine=index(tempname,' ')
-      if(fine.eq.0) fine=len(tempname)
 
-      open(unit=lun,file="Source/makefile",status='old',err=20)
-      dirup=0
-      goto 100
- 20   close(lun)
-
-      open(unit=lun,file="../Source/makefile",status='old',err=30)
-      dirup=1
-      goto 100
- 30   close(lun)
-
-      open(unit=lun,file="../../Source/makefile",status='old',err=40)
-      dirup=2
-      goto 100
- 40   close(lun)
-
-      open(unit=lun,file="../../../Source/makefile",status='old',err=50)
-      dirup=3
-      goto 100
- 50   close(lun)
-
-      open(unit=lun,file="../../../../Source/makefile",status='old',err=60)
-      dirup=4
-      goto 100
- 60   close(lun)
-
-      open(unit=lun,file="../../../../../Source/makefile",status='old',err=70)
-      dirup=5
-      goto 100
- 70   close(lun) 
-      write (*,*) 'Warning: file ',tempname(1:fine),' is not correct'
-     
-
-
-
-
- 100  continue
-      close(lun)
-
-      fopened=.true.
 c
 c 	  if I have to read a card
 c
-	  if(index(filename,"_card").gt.0) then
-	     tempname='Cards/'//tempname(1:fine)
-	     fine=fine+6
+
+      tempname=filename 	 
+      fine=index(tempname,' ') 	 
+      fine2=index(path,' ')-1	 
+      if(fine.eq.0) fine=len(tempname)
+      open(unit=lun,file=tempname,status='old',ERR=20)
+      fopened=.true.
+      return
+c
+c     check path from the executable
+c
+ 20   if(index(filename,"_card").gt.0) then
+         tempname='Cards/'//tempname(1:fine)
+         fine=fine+6
       endif
-      
-      if(dirup.eq.0) open(unit=lun,file=tempname(1:fine),status='old',err=110)
-      if(dirup.eq.1) open(unit=lun,file='../'//tempname(1:fine),status='old',err=110)
-      if(dirup.eq.2) open(unit=lun,file='../../'//tempname(1:fine),status='old',err=110)
-      if(dirup.eq.3) open(unit=lun,file='../../../'//tempname(1:fine),status='old',err=110)
-      if(dirup.eq.4) open(unit=lun,file='../../../../'//tempname(1:fine),status='old',err=110)
-      if(dirup.eq.5) open(unit=lun,file='../../../../../'//tempname(1:fine),status='old',err=110)
-      return
+      tempname2 = path//tempname
 
- 110  fopened=.false.
-      close(lun) 
-      write (*,*) 'Warning: file ',tempname(1:fine),' is not in the main directory'
-
-      return
+      fopened=.false.
+      upname='../../../../../../../'
+      do i=0,6
+         open(unit=lun,file=tempname2,status='old',ERR=30)
+         fopened=.true.
+         exit
+ 30      tempname2=path(:fine2)//upname(:3*i)//tempname
+         if (i.eq.6)then
+            write(*,*) 'Warning: file ',filename,' not found'
+         endif
+      enddo
       end
+
+

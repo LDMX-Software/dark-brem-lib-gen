@@ -1,59 +1,36 @@
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c      written by the UFO converter
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+      DOUBLE PRECISION G
+      COMMON/STRONG/ G
+
+      DOUBLE COMPLEX GAL(2)
+      COMMON/WEAK/ GAL
+
+      DOUBLE PRECISION MU_R
+      COMMON/RSCALE/ MU_R
+
+      DOUBLE PRECISION NF
+      PARAMETER(NF=3D0)
+      DOUBLE PRECISION NL
+      PARAMETER(NL=0D0)
+
+      DOUBLE PRECISION MDL_MB,MDL_MC,MDL_MCHI1,MDL_MCHI2,MDL_ME,MDL_MH
+     $ ,MDL_MHS,MDL_MM,MDL_MNUL,MDL_MT,MDL_MTA,MDL_MW,MDL_MZ,MDL_MAP
+
+      COMMON/MASSES/ MDL_MB,MDL_MC,MDL_MCHI1,MDL_MCHI2,MDL_ME,MDL_MH
+     $ ,MDL_MHS,MDL_MM,MDL_MNUL,MDL_MT,MDL_MTA,MDL_MW,MDL_MZ,MDL_MAP
 
 
-c Define common block containing all coupling constants and masses
-c  which are used in the HELAS routines.
-c
-c  These include masses, widths and real/complex couplings.
-c
-c  This file can be built automatically from particles.dat and
-c  interactions.dat
-c
-c====================================================================
-c
-c
-c
-c     QCD 
-c
-      double complex       gg(2)
-      double precision     g
-      common /COUPL_QCD/   g,gg   
-c
-c    kinematical masses
-c
-      double precision     hmass, wmass, zmass, amass, elemass, mumass,
-     &                     tmass, bmass, lmass, cmass
-      common /COUPL_MASS/  hmass, wmass, zmass, amass, elemass, mumass,
-     &                     tmass, bmass, lmass, cmass
-c
-c   widths
-c
-      double precision     hwidth, wwidth, zwidth, 
-     &                     twidth, lwidth, awidth
-      common /COUPL_WIDTH/ hwidth, wwidth, zwidth, 
-     &                     twidth, lwidth, awidth
-c
-c  couplings in the feynman rules
-c
-      double complex       gal(2), gad(2), gau(2), gwf(2),
-     &                     gzn(2), gzl(2), gzd(2), gzu(2)
-      double precision     gw, gwwa, gwwz
-      common /COUPL_GAUGE/ gal   , gad   , gau   , gwf   ,
-     &                     gzn   , gzl   , gzd   , gzu   ,
-     &                     gw, gwwa, gwwz
-c
-      double complex       gwfc(2),  gwfs(2), gwfm(2)
-      common /coupl_ckm/   gwfc,     gwfs   , gwfm	
-c
-      double complex       gwwh, gzzh, gwwhh, gzzhh, ghhh, ghhhh
-      common /COUPL_SCAL/  gwwh, gzzh, gwwhh, gzzhh, ghhh, ghhhh
-c
-      double complex       ghtop(2), ghbot(2), ghtau(2), ghcha(2)
-      common /COUPL_YUK/   ghtop   , ghbot   , ghtau   , ghcha
+      DOUBLE PRECISION MDL_WAP,MDL_WH,MDL_WHS,MDL_WT,MDL_WW,MDL_WZ
+     $ ,MDL_WCHI2
+
+      COMMON/WIDTHS/ MDL_WAP,MDL_WH,MDL_WHS,MDL_WT,MDL_WW,MDL_WZ
+     $ ,MDL_WCHI2
 
 
-      double complex   GAF(2),GAN(2),GEAPX(2),GEAP(2),GDAP(2),GUAP(2)
-      common /DC_COUPL/ GAF,GAN,GEAPX,GEAP,GDAP,GUAP
-      double precision FMASS,APMASS,HPMASS
-      double precision FWIDTH,APWIDTH,HPWIDTH
-      common /USR_MASS/  FMASS,APMASS,HPMASS
-      common /USR_DECAY/ FWIDTH,APWIDTH,HPWIDTH
+      DOUBLE COMPLEX GC_4, GC_39, GC_48, GC_87
+
+      COMMON/COUPLINGS/ GC_4, GC_39, GC_48, GC_87
+

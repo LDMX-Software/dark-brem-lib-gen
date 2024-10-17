@@ -26,15 +26,26 @@ c
 c     Local
 c
       double precision z,zmin,zmax,xmin,xmax,ez
-      double precision pole1,width1,x
+      double precision pole1,width1,x,xc
       double precision a,b
+c
+c     small width treatment
+c
+      double precision small_width_treatment
+      common/narrow_width/small_width_treatment
 c-----
 c  Begin Code
 c-----
       pole=pole1
       width=width1
+
       x = x1
       if (pole .gt. 0d0) then
+         if (width.lt.pole*small_width_treatment)then
+            width = pole * small_width_treatment
+            jac = jac * width/width1
+         endif
+
          zmin = atan((-pole)/width)/width
          zmax = atan((1d0-pole)/width)/width
          if (x .gt. del .and. x .lt. 1d0-del) then
@@ -67,7 +78,24 @@ c-----
             jac = jac *(zmax-zmin)*.5d0*(ez+4d0*width*width/ez)
 c            x = .5d0*(1d0-x)
          endif
-
+c-------
+c    tjs 3/5/2011  Perform 1/x transformation  using y=xo^(1-x)
+c-------
+      elseif(pole .eq. -15d0 .and. width .gt. 0d0) then !1/x   limit of width         
+c         if (x .lt. width) then      !No transformation below cutoff
+         xc = width
+         xc = 1d0/(1d0-log(width))
+         if (x .le. xc) then      !No transformation below cutoff
+            y=x*width/xc
+            jac = jac * width / xc
+         else
+            z = (x-xc)/(1d0-xc)
+            y=width**(1d0-z)
+            jac = jac * y * (-log(width))/(1d0-xc)
+c            write(*,*) "trans",x,y,z
+         endif
+c         write(*,*) 'Transpole called',x,y
+         return
       elseif(pole .ge. -2d0 .and. width .gt. 0d0) then !1/x^2   limit of width
          if (x .lt. width) then      !No transformation below cutoff
             y=x
@@ -158,13 +186,19 @@ c     Arguments
 c
       double precision pole1,width1,y1,jac
       real*8 x
-
+c
+c     small width treatment
+c
+      double precision small_width_treatment
+      common/narrow_width/small_width_treatment
 c
 c     Local
 c
       double precision z,zmin,zmax,xmin,xmax,ez
-      double precision pole,width,y
+      double precision pole,width,y,xc
       double precision a,b
+      double precision xgmin,xgmax       ! these should be identical 
+      parameter (xgmin=-1d0, xgmax=1d0)  ! to the ones in genps.inc
 c-----
 c  Begin Code
 c-----
@@ -172,6 +206,10 @@ c-----
       width=width1
       y = y1
       if (pole .gt. 0d0) then                   !BW 
+         if (width.lt.pole*small_width_treatment)then
+            width = pole * small_width_treatment
+            jac = jac * width/width1
+         endif
          zmin = atan((-pole)/width)/width
          zmax = atan((1d0-pole)/width)/width
          z = atan((y-pole)/width)/width
@@ -196,9 +234,31 @@ c-----
                x=xmin
             endif
             jac = jac*(xmax-xmin)/del
+c RF (2014/07/07): code is not protected against this special case. In this case,
+c simply set x to 1 and the jac to zero so that this PS point will not
+c contribute (but you do get the correct xbin_min and xbin_max in
+c sample_get_x)
+            if (y.eq.xgmax .and. xmin.ge.xgmax) then
+               x=1d0
+               jac=0d0
+            endif
          else
             jac = jac *(width/cos(width*z))**2*(zmax-zmin)
          endif
+c-------
+c    tjs 3/5/2011  Perform 1/x transformation  using y=xo^(1-x)
+c-------
+      elseif(pole .eq. -15d0 .and. width .gt. 0d0) then !1/x   limit of width
+         xc = 1d0/(1d0-log(width))
+c         xc = width
+         if (y .le. width) then      !No transformation below cutoff
+            x = y*xc/width
+         else
+            z = 1d0-log(y)/log(width)
+            x = z*(1d0-xc) + xc
+c            write(*,*) "untrans",x,y,z
+         endif
+         return
       elseif(pole .gt. -1d0) then !1/sqrt((.5-x)^2+width^2)  t-channel
          if (y .gt. .5d0) then
             x=y
