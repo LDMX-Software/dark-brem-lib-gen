@@ -1,4 +1,4 @@
-"""Generate a Dark-Brem event library using MadGraph 4"""
+"""Generate a Dark-Brem event library using MG5_aMC@NLO 3.5.6 using iDM UFO (https://arxiv.org/abs/1804.00661)"""
 
 import argparse
 import os
@@ -26,28 +26,29 @@ lepton_options = { # Mass [GeV], PDG
 def in_singularity() :
     return os.path.isfile('/singularity')
 
-class SafeDict(dict) :
-    """ Idea for this type of look-up dictionary is provided by
-    https://stackoverflow.com/a/17215533
-
-    Basically, we skip any keys that don't have values by leaving
-    the key (with the curly-braces) in the file.
+def replace_strings_in_file(file_path, replacements):
     """
-    def __missing__(self, key) :
-        return '{'+key+'}'
-
-def write(fp, **kwargs) :
-    template_f = f'{fp}.tmpl'
+    Replaces multiple strings in a file based on a dictionary of replacements.
+    
+    Parameters:
+    - file_path (str): Path to the file.
+    - replacements (dict): Dictionary where keys are strings to be replaced and values are replacement strings.
+    """
+    # Make sure the template file exists
+    template_f = f'{file_path}.tmpl'
     if not os.path.isfile(template_f) :
-        raise Exception(f'{fp} does not have an template file.')
-    # get file template
-    with open(fp+'.tmpl','r') as f :
-        t = f.read()
-    # insert values
-    t = t.format_map(SafeDict(**kwargs))
-    # write file content
-    with open(fp,'w') as f :
-        f.write(t)
+        raise Exception(f'{file_path}.tmpl does not exists.')
+    # Read the file contents
+    with open(file_path+'.tmpl', 'r') as file:
+        file_data = file.read()
+
+    # Perform the replacements
+    for old_string, new_string in replacements.items():
+        file_data = file_data.replace(old_string, new_string)
+
+    # Write the updated contents back to the file
+    with open(file_path, 'w') as file:
+        file.write(file_data)
 
 def generate() :
     parser = argparse.ArgumentParser('dbgen run',
@@ -60,7 +61,7 @@ def generate() :
     parser.add_argument('--nevents',default=20000,type=int,
         help='Number of events per sampling point to generate.')
 
-    parser.add_argument('--max_energy',default=4.0,type=float,
+    parser.add_argument('--max_energy',default=8.0,type=float,
         help='Maximum energy of the incident lepton beam in GeV')
     parser.add_argument('--min_energy',default=None,type=float,
         help='Miminum energy of the incident lepton beam in GeV (default is half max).')
@@ -74,8 +75,8 @@ def generate() :
         help='Target material (or materials) to shoot leptons at.', nargs='+')
     parser.add_argument('--lepton',default='electron',choices=lepton_options.keys(),
         help='Leptons to shoot.')
-    parser.add_argument('--elastic-ff-only',action='store_true',
-        help='only include elastic part of form factor in dark brem coupling')
+    # parser.add_argument('--elastic_ff_only',action='store_true',
+    #     help='only include elastic part of form factor in dark brem coupling')
 
     arg = parser.parse_args()
 
@@ -84,7 +85,7 @@ def generate() :
         min_energy = arg.min_energy
 
     # user mounts output directory to specific location in container
-    out_dir = '/output'
+    out_dir = '/output'    
 
     library_name=f'{arg.lepton}_{"".join(arg.target)}_MaxE_{arg.max_energy}_MinE_{min_energy}_RelEStep_{arg.rel_step}_UndecayedAP_mA_{arg.apmass}_run_{arg.run}'
     library_dir=os.path.join(out_dir,library_name)
@@ -106,42 +107,45 @@ def generate() :
 
     for target_opt in arg.target :
         target = target_options[target_opt]
+        replacements_for_param = {
+            '{ap_mass}': f"{arg.apmass}",
+            '{lepton_mass}': f"{lepton['mass']}",
+            '{target_Z}': f"{target['Z']}",
+            '{target_mass}': f"{target['mass']}",
+        }
+        replace_strings_in_file('Cards/param_card.dat', replacements_for_param)
 
-        write('Cards/param_card.dat', 
-            ap_mass = arg.apmass, 
-            lepton_mass = lepton['mass'],
-            target_Z = target['Z'], 
-            target_mass = target['mass'])
-
-        write('Source/MODEL/couplings.f',
-            target_A = target['A'])
-
-        if arg.elastic_ff_only :
-            # comment out the inelastic part of the FF
-            shutil.copy2('Source/MODEL/couplings.f', 'Source/MODEL/couplings.f.bak')
-            with open('Source/MODEL/couplings.f','w') as new :
-                with open('Source/MODEL/couplings.f.bak') as og :
-                    for ln, line in enumerate(og) :
-                        # skip the two lines adding the inelastic FF term
-                        if ln == 237 or ln == 238 :
-                            continue
-                        new.write(line)
+        # if arg.elastic_ff_only :
+        #     # comment out the inelastic part of the FF
+        #     Tom commented that we need to modify the UFO to introduce this coupling-modification.
+        #     Maybe some parameter that is multiplying the inelastic term so we can set it to 1 (normal) or 0 (elastic ff only)
+        #     shutil.copy2('Source/MODEL/couplings.f', 'Source/MODEL/couplings.f.bak')
+        #     with open('Source/MODEL/couplings.f','w') as new :
+        #         with open('Source/MODEL/couplings.f.bak') as og :
+        #             for ln, line in enumerate(og) :
+        #                 # skip the two lines adding the inelastic FF term
+        #                 if ln == 237 or ln == 238 :
+        #                     continue
+        #                 new.write(line)
                 
         energy = arg.max_energy
         while energy > min_energy*(1.-arg.rel_step) :
-            write('Cards/run_card.dat',
-                nevents = arg.nevents,
-                run = arg.run,
-                lepton_energy = energy,
-                lepton_mass = lepton['mass'],
-                max_recoil_energy = arg.max_recoil,
-                target_mass = target['mass'])
+            replacements_for_run = {
+                '{nevents}': f"{arg.nevents}",
+                '{run}':  f"{arg.run}",
+                '{lepton_energy}': f"{energy}",
+                '{target_mass}':  f"{target['mass']}",
+                '{lepton_mass}': f"{lepton['mass']}",
+                '{max_recoil_energy}': f"{arg.max_recoil}",
+            }
+            replace_strings_in_file('Cards/run_card.dat', replacements_for_run)
+            
     
             prefix = f'{library_name}_{target_opt}_IncidentEnergy_{energy}'
-    
+            print(f"Generate events with {energy} GeV energy")
             subprocess.run(['./bin/generate_events','0',prefix],check = True)
     
-            with gzip.open(f'Events/{prefix}_unweighted_events.lhe.gz','rt') as zipped_lhe :
+            with gzip.open(f'Events/{prefix}/unweighted_events.lhe.gz','rt') as zipped_lhe :
                 with open(f'{library_dir}/{prefix}_unweighted_events.lhe','w') as lhe :
                     # translate PDGs of 11 to correct lepton PDG just in case we ran with muons
                     content = zipped_lhe.read().replace(' 11 ',f' {lepton["pdg"]} ')

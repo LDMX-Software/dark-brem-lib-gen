@@ -4,115 +4,115 @@ c     This is the USER-FUNCTION to calculate the renormalization
 c     scale on event-by-event basis.
 c----------------------------------------------------------------------      
       implicit none
-      integer    maxexternal
-      parameter (maxexternal=15)
       real*8   alphas
       external alphas
 c
 c     INCLUDE and COMMON
 c
       include 'genps.inc'
+      include 'nexternal.inc'
       include 'coupl.inc'
 
-      integer    maxflow, i
-      parameter (maxflow=999)
-      integer idup(nexternal,maxproc)
-      integer mothup(2,nexternal,maxproc)
-      integer icolup(2,nexternal,maxflow)
+      integer i
+      include 'maxamps.inc'
+      integer idup(nexternal,maxproc,maxsproc)
+      integer mothup(2,nexternal)
+      integer icolup(2,nexternal,maxflow,maxsproc)
       include 'leshouche.inc'
       include 'run.inc'
 
       double precision pmass(nexternal)
       common/to_mass/  pmass
 
-      real*8 xptj,xptb,xpta,xptl
+      
+      real*8 xptj,xptb,xpta,xptl,xmtc
       real*8 xetamin,xqcut,deltaeta
-      common /to_specxpt/xptj,xptb,xpta,xptl,xetamin,xqcut,deltaeta
+      common /to_specxpt/xptj,xptb,xpta,xptl,xmtc,xetamin,xqcut,deltaeta
 
 c
 c     ARGUMENTS
 c      
-      REAL*8 P(0:3,maxexternal)
+      REAL*8 P(0:3,nexternal)
       REAL*8 rscale
 c
 c     EXTERNAL
 c
-      REAL*8 R2,DOT,ET,ETA,DJ,SumDot,PT
+      REAL*8 R2,DOT,ET,ETA,DJ,SumDot,PT,user_dynamical_scale
 
 c----------
 c     start
 c----------
-
-      rscale=0d0
-
-c
-c-some examples of dynamical scales
-c
-
-c      if(first) then
-c         write(*,*) 'Using event- by event renormalization/factorization scale:'
-c         write(*,*) 'scalefact^2*(Max of squared masses of final-state particles + '
-c         write(*,*) '             sum of pT^2 for jets and massless particles)'
-c      endif
-c      do i=3,nexternal
-c         rscale=max(rscale,pmass(i)**2)
-c      enddo
-c      do i=3,nexternal
-c         if(iabs(idup(i,1)).le.5.or.idup(i,1).eq.21.or.pmass(i).eq.0d0)then
-c            rscale=rscale+pt(p(0,i))**2
-c         endif
-c      enddo
-
-c      rscale=sqrt(rscale)
-
-c      rscale=rscale*scalefact
-
-
-c---------------------------------------
-c-- total transverse energy of the event 
-c---------------------------------------
-c     rscale=0d0
-c     do i=3,nexternal
-c      rscale=rscale+et(P(0,i))
-c     enddo
-
-c--------------------------------------
-c-- scale^2 = \sum_i  (pt_i^2+m_i^2)  
-c--------------------------------------
-c     rscale=0d0
-c     do i=3,nexternal
-c      rscale=rscale+pt(P(0,i))**2+dot(p(0,i),p(0,i))
-c     enddo
-c     rscale=dsqrt(rscale)
-
-c--------------------------------------
-c-- \sqrt(s): partonic energy
-c--------------------------------------
-c     rscale=dsqrt(2d0*dot(P(0,1),P(0,2)))
-
+      if (dynamical_scale_choice.eq.-1) then
+c         Cluster external states until reducing the system to a 2->2 topology whose transverse mass is used for setting the scale.
+c         This is not done in this file due to the clustering.
+         rscale=0d0
+      elseif(dynamical_scale_choice.eq.1) then
+c         Total transverse energy of the event.         
+          rscale=0d0
+          do i=3,nexternal
+             rscale=rscale+et(P(0,i))
+          enddo      
+      elseif(dynamical_scale_choice.eq.2) then
+c         sum of the transverse mass
+c         m^2+pt^2=p(0)^2-p(3)^2=(p(0)+p(3))*(p(0)-p(3))
+          rscale=0d0
+          do i=3,nexternal
+            rscale=rscale+dsqrt(max(0d0,(P(0,i)+P(3,i))*(P(0,i)-P(3,i))))
+          enddo
+          rscale=rscale
+      elseif(dynamical_scale_choice.eq.3) then
+c         sum of the transverse mass divide by 2
+c         m^2+pt^2=p(0)^2-p(3)^2=(p(0)+p(3))*(p(0)-p(3))
+          rscale=0d0
+          do i=3,nexternal
+            rscale=rscale+dsqrt(max(0d0,(P(0,i)+P(3,i))*(P(0,i)-P(3,i))))
+          enddo
+          rscale=rscale/2d0
+      elseif(dynamical_scale_choice.eq.4) then
+c     \sqrt(s), partonic energy
+         rscale = dsqrt(max(0d0,sumdot(p(0,1), p(0,2), 1d0)))
+      elseif(dynamical_scale_choice.eq.5) then
+c         \decaying particle mass, for decays
+          rscale=dsqrt(max(0d0,dot(P(0,1),P(0,1))))
+      elseif(dynamical_scale_choice.eq.0) then
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cc      USER-DEFINED SCALE: ENTER YOUR CODE HERE                                 cc
+cc      to use this code you must set                                            cc
+cc                 dynamical_scale_choice = 0                                    cc
+cc      in the run_card (run_card.dat)                                           cc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+         rscale = user_dynamical_scale(P)
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cc      USER-DEFINED SCALE: END OF USER CODE                                     cc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      else
+        write(*,*)'Unknown option in scale_global_reference',dynamical_scale_choice
+        stop
+      endif
+      rscale = scalefact*rscale
       return
       end
 
 
-      subroutine set_fac_scale(P,q2fact)
+      subroutine set_fac_scale(P,q2factorization)
 c----------------------------------------------------------------------
 c     This is the USER-FUNCTION to calculate the factorization 
 c     scales^2 on event-by-event basis.
 c----------------------------------------------------------------------      
       implicit none
-      integer    maxexternal
-      parameter (maxexternal=15)
-c
+
 c     INCLUDE and COMMON
 c
       include 'genps.inc'
+      include 'nexternal.inc'
       include 'coupl.inc'
+      include 'run.inc'
 c--masses and poles
 c
 c     ARGUMENTS
 c      
-      REAL*8 P(0:3,maxexternal)
-      real*8 q2fact(2)
+      REAL*8 P(0:3,nexternal)
+      real*8 q2factorization(2)
 c
 c     EXTERNAL
 c
@@ -123,20 +123,26 @@ c
       integer i
       logical first
       data first/.true./
-
+      double precision tempscale
 c----------
 c     start
 c----------
       
-      
-      q2fact(1)=0d0             !factorization scale**2 for pdf1
-
-c      call set_ren_scale(P,q2fact(1))
-c
-c      q2fact(1)=q2fact(1)**2
-c
-c      q2fact(2)=q2fact(1)       !factorization scale**2 for pdf2
-      
+      if (dynamical_scale_choice.eq.-1) then
+c         Cluster external states until reducing the system to a 2->2 topology whose transverse mass is used for setting the scale.
+c         This is not done in this file due to the clustering.
+         if(.not.fixed_fac_scale1) q2factorization(1)=0d0          !factorization scale**2 for pdf1
+         if(.not.fixed_fac_scale2) q2factorization(2)=0d0          !factorization scale**2 for pdf2
+      elseif(dynamical_scale_choice.eq.0) then
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cc      USER DEFINE SCALE: ENTER YOUR CODE HERE                                  cc
+cc      to use this code you need to set                                         cc
+cc                 dymamical_scale_choice to 0 in the run_card                   cc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c         default: use the renormalization scale
+          call set_ren_scale(P,tempscale)
+          if(.not.fixed_fac_scale1) q2factorization(1)=tempscale**2
+          if(.not.fixed_fac_scale2) q2factorization(2)=tempscale**2   !factorization scale**2 for pdf2
 
 c
 c-some examples of dynamical scales
@@ -145,26 +151,40 @@ c
 c---------------------------------------
 c-- total transverse energy of the event 
 c---------------------------------------
-c     q2fact(1)=0d0
+c     q2factorization(1)=0d0
 c     do i=3,nexternal
-c      q2fact(1)= q2fact(1)+et(P(0,i))**2
+c      q2factorization(1)= q2factorization(1)+et(P(0,i))**2
 c     enddo
-c     q2fact(2)=q2fact(1)  
+c     q2factorization(2)=q2factorization(1)  
 
 c--------------------------------------
 c-- scale^2 = \sum_i  (pt_i^2+m_i^2)  
 c--------------------------------------
-c     q2fact(1)=0d0
+c     q2factorization(1)=0d0
 c     do i=3,nexternal
-c      q2fact(1)=q2fact(1)+pt(P(0,i))**2+dot(p(0,i),p(0,i))
+c      q2factorization(1)=q2factorization(1)+pt(P(0,i))**2+dot(p(0,i),p(0,i))
 c     enddo
-c     q2fact(2)=q2fact(1)  
+c     q2factorization(2)=q2factorization(1)  
 
 c--------------------------------------
 c-- \sqrt(s): partonic energy
 c--------------------------------------
-c     q2fact(1)=2d0*dot(P(0,1),P(0,2))
-c     q2fact(2)=q2fact(1)  
+c     q2factorization(1)=2d0*dot(P(0,1),P(0,2))
+c     q2factorization(2)=q2factorization(1)  
+
+
+
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cc      USER DEFINE SCALE: END of USER CODE                                      cc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      else
+          call set_ren_scale(P,tempscale)
+          if(.not.fixed_fac_scale1)  q2factorization(1)=tempscale**2
+          if(.not.fixed_fac_scale2)  q2factorization(2)=tempscale**2 !factorization scale**2 for pdf2
+      endif
+
+
+      
 
       
       return

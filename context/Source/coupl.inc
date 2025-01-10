@@ -1,1 +1,1 @@
-./MODEL/coupl.inc
+MODEL/coupl.inc
