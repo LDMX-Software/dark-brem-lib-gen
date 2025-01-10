@@ -37,7 +37,7 @@ def replace_strings_in_file(file_path, replacements):
     # Make sure the template file exists
     template_f = f'{file_path}.tmpl'
     if not os.path.isfile(template_f) :
-        raise Exception(f'{file_path} does not have an template file.')
+        raise Exception(f'{file_path}.tmpl does not exists.')
     # Read the file contents
     with open(file_path+'.tmpl', 'r') as file:
         file_data = file.read()
@@ -61,7 +61,7 @@ def generate() :
     parser.add_argument('--nevents',default=20000,type=int,
         help='Number of events per sampling point to generate.')
 
-    parser.add_argument('--max_energy',default=4.0,type=float,
+    parser.add_argument('--max_energy',default=8.0,type=float,
         help='Maximum energy of the incident lepton beam in GeV')
     parser.add_argument('--min_energy',default=None,type=float,
         help='Miminum energy of the incident lepton beam in GeV (default is half max).')
@@ -75,8 +75,8 @@ def generate() :
         help='Target material (or materials) to shoot leptons at.', nargs='+')
     parser.add_argument('--lepton',default='electron',choices=lepton_options.keys(),
         help='Leptons to shoot.')
-    parser.add_argument('--elastic-ff-only',action='store_true',
-        help='only include elastic part of form factor in dark brem coupling')
+    # parser.add_argument('--elastic_ff_only',action='store_true',
+    #     help='only include elastic part of form factor in dark brem coupling')
 
     arg = parser.parse_args()
 
@@ -115,12 +115,10 @@ def generate() :
         }
         replace_strings_in_file('Cards/param_card.dat', replacements_for_param)
 
-        # Fixing this part is for a future development
-        #write('Source/MODEL/couplings.f',
-        #    target_A = target['A'])
-
         # if arg.elastic_ff_only :
         #     # comment out the inelastic part of the FF
+        #     Tom commented that we need to modify the UFO to introduce this coupling-modification.
+        #     Maybe some parameter that is multiplying the inelastic term so we can set it to 1 (normal) or 0 (elastic ff only)
         #     shutil.copy2('Source/MODEL/couplings.f', 'Source/MODEL/couplings.f.bak')
         #     with open('Source/MODEL/couplings.f','w') as new :
         #         with open('Source/MODEL/couplings.f.bak') as og :
@@ -144,7 +142,7 @@ def generate() :
             
     
             prefix = f'{library_name}_{target_opt}_IncidentEnergy_{energy}'
-            print(f"Generate events with {energy}")
+            print(f"Generate events with {energy} GeV energy")
             subprocess.run(['./bin/generate_events','0',prefix],check = True)
     
             with gzip.open(f'Events/{prefix}/unweighted_events.lhe.gz','rt') as zipped_lhe :
