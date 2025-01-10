@@ -22,6 +22,8 @@ COPY . /madgraph
 
 WORKDIR /madgraph/
 
+RUN chmod 777 /madgraph/
+
 RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
     chmod +x makefile bin/*
