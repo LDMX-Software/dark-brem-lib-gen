@@ -24,4 +24,6 @@ RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
     chmod +x makefile bin/* SubProcesses/survey.sh
 
-ENV PATH=${PATH}:/madgraph/bin
+ENV PATH="${PATH}:/madgraph/bin"
+# alpine's shell ash needs the profile file to be updated as well
+RUN echo "export PATH=${PATH}" >> /etc/profile
