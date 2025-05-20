@@ -10,13 +10,20 @@ If you aren't developing the container and just wish to use it,
 you do not need to clone this repository.
 You can simply use the image this repository creates with `denv`.
 
+First, choose a version of dark-brem-lib-gen to use.
+The version must be >= 5.1 for the following run command to function,
+but using an older version can be done with ease as well (see below).
 ```
-denv init ldmx/dark-brem-lib-gen:v5.0 # choose version, must be >= 5.0 (older versions used different interface)
+denv init ldmx/dark-brem-lib-gen:v5.1
+```
+
+Run the library generation from within this initialized environment.
+```
 denv db-lib-gen --help
 ```
 
 ## Usage Manual
-This section lists the different command line options with a bit more explanation that what the command line itself has room for.
+This section lists the different command line options with a bit more explanation than what the command line itself has room for.
 
 `--out-dir` tells the script where to put the "library" (directory of generated LHE files). This directory needs to be a location that is mounted to the container spawned by `denv`. (Use `denv config mounts` to add a directory if needed.)
 
