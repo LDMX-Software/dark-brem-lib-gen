@@ -16,20 +16,12 @@ RUN apk update &&\
 RUN python3 -m pip --no-cache-dir install --upgrade pip setuptools wheel 
 RUN python3 -m pip --no-cache-dir install six numpy
 
-WORKDIR /output/
-
 COPY . /madgraph
 
 WORKDIR /madgraph/
 
 RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
-    chmod +x makefile bin/*
+    chmod +x makefile bin/* SubProcesses/survey.sh
 
-RUN chmod +x /madgraph/SubProcesses/survey.sh
-
-ENTRYPOINT [ "python3", "/madgraph/db-lib-gen.py" ]
-
-# The following is useful for testing
-#ENTRYPOINT ["/bin/bash", "-l", "-c"]
-#CMD [ "bash", "-l" ]
+ENV PATH=${PATH}:/madgraph/bin
