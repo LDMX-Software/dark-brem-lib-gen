@@ -53,7 +53,7 @@ def replace_strings_in_file(file_path, replacements):
         file.write(file_data)
 
 def generate() :
-    parser = argparse.ArgumentParser('denv db-lib-gen',
+    parser = argparse.ArgumentParser('denv dark-brem-lib-gen',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     # leading dashes get removed and dashes within arguments are converted to underscores
@@ -68,7 +68,7 @@ def generate() :
         help='Output directory to put library files')
     # the home directory in the container is the denv workspace,
     # we put the scratch directory there since we know it is mounted and its out of the way
-    parser.add_argument('-s', '--scratch',default=(Path.home() / 'db-lib-gen-scratch'),type=Path,
+    parser.add_argument('-s', '--scratch',default=(Path.home() / 'dark-brem-lib-gen-scratch'),type=Path,
         help='Scratch directory for writing temporary files (only used if running with Singularity/Apptainer)')
     parser.add_argument('--max-energy',default=8.0,type=float,
         help='Maximum energy of the incident lepton beam in GeV')

@@ -19,7 +19,7 @@ denv init ldmx/dark-brem-lib-gen:v5.1
 
 Run the library generation from within this initialized environment.
 ```
-denv db-lib-gen --help
+denv dark-brem-lib-gen --help
 ```
 
 ## Usage Manual
@@ -27,7 +27,7 @@ This section lists the different command line options with a bit more explanatio
 
 `--out-dir` tells the script where to put the "library" (directory of generated LHE files). This directory needs to be a location that is mounted to the container spawned by `denv`. (Use `denv config mounts` to add a directory if needed.)
 
-`--scratch` tells the script where to put scratch files. The scratch directory is only necessary when running with Singularity or Apptainer and defaults to the `db-lib-gen-scratch` subdirectory of the denv workspace directory (which is a good default unless you are running `denv` on a space-limited or slow filesystem).
+`--scratch` tells the script where to put scratch files. The scratch directory is only necessary when running with Singularity or Apptainer and defaults to the `dark-brem-lib-gen-scratch` subdirectory of the denv workspace directory (which is a good default unless you are running `denv` on a space-limited or slow filesystem).
 
 `--pack` instructs the script to package the directory of generated LHE files into a tar-ball (`.tar.gz` file) after they are all written to the output directory. This can be helpful if the newly-generated library needs to be moved immediately after generation since it is generally easier to move only one file that a directory of files.
 
@@ -85,7 +85,7 @@ set -ex
 # use a pre-built SIF file to avoid overloading DockerHub's pull limit
 denv init /full/path/to/shared/location/dark-brem-lib-gen_v5.0.sif
 # run with the arguments to this script
-denv db-lib-gen $@
+denv dark-brem-lib-gen $@
 
 # condor doesn't scan subdirectories so we should move the LHE files here
 #  you could avoid this nonsense with some extra condor config
@@ -97,9 +97,9 @@ find \
 
 # Using Old Versions
 The infrastructure change that enables easy usage via `denv` is providing
-the output (and scatch) directories on the command line to the `db-lib-gen.py`
-python script instead of assuming they are mounted to `/output` and `/working`
-respectively.
+the output (and scatch) directories on the command line to the steering
+python script (`dark-brem-lib-gen` formerly known as `db-lib-gen.py`)
+instead of assuming they are mounted to `/output` and `/working` respectively.
 
 You can still use an old version of the MadGraph event generation by making this
 interface update to the central steering python script of that version.
