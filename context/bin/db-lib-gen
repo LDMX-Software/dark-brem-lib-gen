@@ -64,9 +64,11 @@ def generate() :
         help='Run number for MadGraph which acts as the random number seed.')
     parser.add_argument('--nevents',default=20000,type=int,
         help='Number of events per sampling point to generate.')
-    parser.add_argument('-o', '--out-dir',default=Path.home(),type=Path,
+    parser.add_argument('-o', '--out-dir',default=Path.cwd(),type=Path,
         help='Output directory to put library files')
-    parser.add_argument('-s', '--scratch',default=Path.cwd(),type=Path,
+    # the home directory in the container is the denv workspace,
+    # we put the scratch directory there since we know it is mounted and its out of the way
+    parser.add_argument('-s', '--scratch',default=(Path.home() / 'db-lib-gen-scratch'),type=Path,
         help='Scratch directory for writing temporary files (only used if running with Singularity/Apptainer)')
     parser.add_argument('--max-energy',default=8.0,type=float,
         help='Maximum energy of the incident lepton beam in GeV')
