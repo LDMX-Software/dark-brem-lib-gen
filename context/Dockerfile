@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.21
 
 RUN apk update &&\
     apk add --no-cache \
@@ -13,8 +13,8 @@ RUN apk update &&\
       py3-pip 
 
 # MG5_aMC v3 needs python's following modules 
-RUN python3 -m pip --no-cache-dir install --upgrade pip setuptools wheel 
-RUN python3 -m pip --no-cache-dir install six numpy
+RUN python3 -m pip --no-cache-dir install --root-user-action ignore --break-system-packages --upgrade pip setuptools wheel 
+RUN python3 -m pip --no-cache-dir install --root-user-action ignore --break-system-packages six numpy
 
 COPY . /madgraph
 
@@ -24,4 +24,6 @@ RUN find . -type d -exec chmod -R ugo=rwx {} \; &&\
     find . -type f -exec chmod -R ugo=rw  {} \; &&\
     chmod +x makefile bin/* SubProcesses/survey.sh
 
-ENV PATH=${PATH}:/madgraph/bin
+ENV PATH="${PATH}:/madgraph/bin"
+# alpine's shell ash needs the profile file to be updated as well
+RUN echo "export PATH=${PATH}" >> /etc/profile
