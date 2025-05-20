@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - 'context/**'
-      - 'env.sh'
       - '.github/workflows/ci.yml'
     branches:
       - '**'
@@ -77,29 +76,10 @@ jobs:
     needs: build
     if: ${{ needs.build.outputs.test_tag != '' }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    strategy:
-      matrix:
-        singularity: [noop, 3.8.3, 3.7.1]
     steps:
-    - 
-      name: Get Env Script
-      uses: actions/checkout@v4
-    - 
-      uses: eWaterCycle/setup-singularity@v7
-      if: ${{ !contains(matrix.singularity,'noop') }}
-      with:
-        singularity-version: ${{ matrix.singularity }}
-        use-apptainer: true
     -
       name: Test the Build
       run: |
-        _singularity=${{ matrix.singularity }}
-        echo "Singularity: ${_singularity}"
-        [[ ${_singularity} != "noop" ]] && export DBGEN_FORCE_SINGULARITY="true"
-        source env.sh
-        dbgen use ${{ needs.build.outputs.test_tag }}
-        dbgen config
-        dbgen run --nevents 10
+        curl -s https://tomeichlersmith.github.io/denv/install | sh
+        denv init ${{ needs.build.outputs.test_tag }}
+        denv db-lib-gen --nevents 10
