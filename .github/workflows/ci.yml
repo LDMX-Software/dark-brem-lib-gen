@@ -81,4 +81,4 @@ jobs:
       run: |
         curl -s https://tomeichlersmith.github.io/denv/install | sh
         denv init ${{ needs.build.outputs.test_tag }}
-        denv db-lib-gen --nevents 10
+        denv dark-brem-lib-gen --nevents 10
