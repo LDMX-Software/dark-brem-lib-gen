@@ -126,6 +126,7 @@ jobs:
       if: ${{!contains(matrix.singularity,'noop')}}
       with:
         singularity-version: ${{matrix.singularity}}
+        use-apptainer: true
     -
       name: Test the Build
       run: |
