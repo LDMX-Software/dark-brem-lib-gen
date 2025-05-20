@@ -13,8 +13,8 @@ RUN apk update &&\
       py3-pip 
 
 # MG5_aMC v3 needs python's following modules 
-RUN python3 -m pip --no-cache-dir install --upgrade pip setuptools wheel 
-RUN python3 -m pip --no-cache-dir install six numpy
+RUN python3 -m pip --no-cache-dir install --root-user-action ignore --break-system-packages --upgrade pip setuptools wheel 
+RUN python3 -m pip --no-cache-dir install --root-user-action ignore --break-system-packages six numpy
 
 COPY . /madgraph
 
