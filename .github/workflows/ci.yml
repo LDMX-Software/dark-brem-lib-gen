@@ -13,6 +13,11 @@ on:
 env:
   REGISTRY_IMAGE: ldmx/dark-brem-lib-gen
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
