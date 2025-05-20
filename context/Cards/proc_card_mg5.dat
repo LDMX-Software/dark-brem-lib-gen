@@ -8,7 +8,7 @@
 #*                *                       *                 *
 #*                                                          *
 #*                                                          *
-#*         VERSION 3.5.4                 2024-04-05         *
+#*         VERSION 3.5.6                 2024-09-26         *
 #*                                                          *
 #*    The MadGraph5_aMC@NLO Development Team - Find us at   *
 #*    https://server06.fynu.ucl.ac.be/projects/madgraph     *
@@ -40,6 +40,6 @@ define l+ = e+ mu+
 define l- = e- mu-
 define vl = ve vm vt
 define vl~ = ve~ vm~ vt~
-import model /home/vamitamas/MadGraph/iDM
+import model /Users/tav/Documents/1Research/LDMX/MadGraphUpdate/iDM
 generate e- N > e- N ap
-output context2
+output FixedInelasticTerm
