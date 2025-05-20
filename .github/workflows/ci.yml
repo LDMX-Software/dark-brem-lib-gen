@@ -17,7 +17,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      test_tag: ${{ steps.meta.outputs.version || steps.meta.outputs.sha }}
+      test_tag: ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
     defaults:
       run:
         shell: bash
