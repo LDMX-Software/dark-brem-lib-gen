@@ -7,7 +7,7 @@ C      2*P(-1,1)*P(-1,2))/dval))**2)+Znuc*(apval**2*(- 2*MNul**2 -
 C      2*P(-1,1)*P(-1,2))/(1+apval**2*(- 2*MNul**2 -
 C      2*P(-1,1)*P(-1,2))))**2*((1+(- 2*MNul**2 -
 C      2*P(-1,1)*P(-1,2))*inelastic1)/(1+(- 2*MNul**2 -
-C      2*P(-1,1)*P(-1,2))*inelastic2)**4)**2)**0.5)*Gamma(3,2,1)
+C      2*P(-1,1)*P(-1,2))*inelastic2)**4))**0.5)*Gamma(3,2,1)
 C     
       SUBROUTINE FF1P0_3(F1, F2, COUP, M3, W3,V3)
       IMPLICIT NONE
@@ -24,7 +24,6 @@ C
       COMPLEX*16 FCT11
       COMPLEX*16 FCT12
       COMPLEX*16 FCT13
-      COMPLEX*16 FCT14
       COMPLEX*16 FCT2
       COMPLEX*16 FCT3
       COMPLEX*16 FCT4
@@ -69,18 +68,17 @@ C
       FCT10 = (-2D0 * FCT8*FCT9*(FCT2+TMP0))**(2D0)
       FCT11 = ((-2D0)*(MDL_INELASTIC2*(FCT2+TMP0)+ -1D0/2D0))**(4D0)
       FCT12 = 1D0/(FCT11)
-      FCT13 = (-2D0 * FCT12*(MDL_INELASTIC1*(FCT2+TMP0)+ -1D0/2D0))*
-     $ *(2D0)
-      FCT14 = ((FCT7*FCT4*FCT0+MDL_ZNUC*FCT13*FCT10))**(1D0/2D0)
+      FCT13 = ((-2D0)*(FCT10*FCT12*MDL_ZNUC*(MDL_INELASTIC1*(FCT2+TMP0)
+     $ + -1D0/2D0)-1D0/2D0*(FCT7*FCT4*FCT0)))**(1D0/2D0)
       DENOM = COUP/(P3(0)**2-P3(1)**2-P3(2)**2-P3(3)**2 - M3 * (M3 -CI
      $ * W3))
-      V3(3)= DENOM*(-CI )* FCT14*(F2(5)*F1(3)+F2(6)*F1(4)+F2(3)*F1(5)
+      V3(3)= DENOM*(-CI )* FCT13*(F2(5)*F1(3)+F2(6)*F1(4)+F2(3)*F1(5)
      $ +F2(4)*F1(6))
-      V3(4)= DENOM*(-CI )* FCT14*(-F2(6)*F1(3)-F2(5)*F1(4)+F2(4)*F1(5)
+      V3(4)= DENOM*(-CI )* FCT13*(-F2(6)*F1(3)-F2(5)*F1(4)+F2(4)*F1(5)
      $ +F2(3)*F1(6))
-      V3(5)= DENOM*(-CI )* FCT14*(-CI*(F2(6)*F1(3)+F2(3)*F1(6))+CI
+      V3(5)= DENOM*(-CI )* FCT13*(-CI*(F2(6)*F1(3)+F2(3)*F1(6))+CI
      $ *(F2(5)*F1(4)+F2(4)*F1(5)))
-      V3(6)= DENOM*(-CI )* FCT14*(-F2(5)*F1(3)-F2(4)*F1(6)+F2(6)*F1(4)
+      V3(6)= DENOM*(-CI )* FCT13*(-F2(5)*F1(3)-F2(4)*F1(6)+F2(6)*F1(4)
      $ +F2(3)*F1(5))
       END
 

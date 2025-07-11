@@ -7,5 +7,5 @@ from function_library import complexconjugate, re, im, csc, sec, acsc, asec, the
 
 AAA = FormFactor(name = 'AAA',
                  type = 'real',
-                 value = '((Znuc**2*(aval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))/(1+aval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))))**2*(1/(1+(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))/dval))**2)+Znuc*(apval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))/(1+apval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))))**2*((1+(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))*inelastic1)/(1+(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))*inelastic2)**4)**2)**0.5'
+                 value = '((Znuc**2*(aval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))/(1+aval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))))**2*(1/(1+(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))/dval))**2)+Znuc*(apval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))/(1+apval**2*(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))))**2*((1+(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))*inelastic1)/(1+(- 2*MNul**2 - 2*P(-1,1)*P(-1,2))*inelastic2)**4))**0.5'
                  )

@@ -7,3 +7,4 @@ libs/**
 *.sif
 *.lhe
 .ipynb_checkpoints/**
+*.pyc
