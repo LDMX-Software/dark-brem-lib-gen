@@ -14,7 +14,7 @@ First, choose a version of dark-brem-lib-gen to use.
 The version must be >= 5.1 for the following run command to function,
 but using an older version can be done with ease as well (see below).
 ```
-denv init ldmx/dark-brem-lib-gen:v5.1
+denv init ldmx/dark-brem-lib-gen:v5.2.0
 ```
 
 Run the library generation from within this initialized environment.
